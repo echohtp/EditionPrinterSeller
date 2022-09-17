@@ -21,3 +21,5 @@ import {
   
   export const PRICE = 100
   export const COST: number = PRICE * LAMPORTS_PER_SOL // put token decimals here or you will have a problem
+
+  export const EDITION_MARKER_BIT_SIZE = 248;
