@@ -1,11 +1,24 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react'
-import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
+import {
+  PublicKey,
+  Transaction,
+  SystemProgram,
+  Keypair,
+  Connection
+} from '@solana/web3.js'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
+import {
+  BigNumber,
+  toBigNumber,
+  findMasterEditionV2Pda,
+  findMetadataPda,
+  findEditionPda
+} from '@metaplex-foundation/js'
 import styles from '../styles/Home.module.css'
 import {
   createTransferInstruction,
@@ -20,6 +33,11 @@ import {
   MintNewEditionFromMasterEditionViaTokenInstructionAccounts,
   MintNewEditionFromMasterEditionViaTokenInstructionArgs
 } from '@metaplex-foundation/mpl-token-metadata'
+import {
+  Metaplex,
+  findEditionMarkerPda,
+  walletAdapterIdentity
+} from '@metaplex-foundation/js'
 import { useMemo } from 'react'
 import {
   COST,
@@ -28,7 +46,8 @@ import {
   ART_UPDATE_AUTHORITY,
   MASTER_EDITION_ADDRESS,
   EDITION_MARKER_BIT_SIZE,
-  PRICE
+  PRICE,
+  TOKEN_METADATA_PROGRAM_ID
 } from '../util/constants'
 
 const Home: NextPage = () => {
@@ -40,6 +59,17 @@ const Home: NextPage = () => {
 
   const doIt = async () => {
     if (!publicKey) return
+
+    const connection = new Connection('https://ssc-dao.genesysgo.net')
+
+    const metaplex = Metaplex.make(connection).use(
+      walletAdapterIdentity(wallet)
+    )
+
+    const nft = await metaplex
+      .nfts()
+      .findByMint({ mintAddress: MASTER_EDITION_ADDRESS })
+      .run()
 
     console.log('Lets do the work')
     console.log('Cost: ', COST)
@@ -63,57 +93,61 @@ const Home: NextPage = () => {
       publicKey!,
       COST
     )
-
+      console.log("Created ixSendMoney")
     //👇🏽 THIS IS WHERE HELP IS NEEDED
 
-    // I saw this in the question below and im not sure why an account was created
-    // https://solana.stackexchange.com/questions/1758/different-errors-by-mint-new-edition-from-master-edition
-    // tx.add(
-    //   SystemProgram.createAccount({
-    //     fromPubkey: publicKey,
-    //     newAccountPubkey: publicKey,
-    //     lamports: await connection.getMinimumBalanceForRentExemption(
-    //       MintLayout.span
-    //     ),
-    //     space: MintLayout.span,
-    //     programId: TOKEN_PROGRAM_ID,
-    //   })
-    // )
-
-
-    // ALL OF THESE VARIABLES GO INTO ixAccounts 
+    // ALL OF THESE VARIABLES GO INTO ixAccounts
     const tokenAccount = await getAssociatedTokenAddress(
       MASTER_EDITION_ADDRESS,
-      publicKey!
+      publicKey
     )
-    const tokenAccountOwner = publicKey
-    const payer = publicKey
-    const masterEdition = MASTER_EDITION_ADDRESS
-    const newMintAuthority = publicKey
-    const newMetadataUpdateAuthority = ART_UPDATE_AUTHORITY
-    // newMetadata: web3.PublicKey; //newMetadata New Metadata key (pda of ['metadata', program id, mint id])
-    // newEdition: web3.PublicKey; //newEdition New Edition (pda of ['metadata', program id, mint id, 'edition'])
-    // newMint: web3.PublicKey; //newMint Mint of new token - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY
-    // editionMarkPda: web3.PublicKey; // will be checked for pre-existence. (pda of ['metadata', program id, master metadata mint id, 'edition', edition_number]) where edition_number is NOT the edition number you pass in args but actually edition_number = floor(edition/EDITION_MARKER_BIT_SIZE).
-    // metadata: web3.PublicKey; //
-    // tokenProgram?: web3.PublicKey;
-    // systemProgram?: web3.PublicKey;
-    // rent?: web3.PublicKey;
-    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionAccounts
+
+    console.log("Found Token Account")
+
+    // ORIGINAL NFT
+    const originalMetadataAddress = findMetadataPda(MASTER_EDITION_ADDRESS)
+    const originalEditionAddress = findMasterEditionV2Pda(
+      MASTER_EDITION_ADDRESS
+    )
+
+    console.log("Found edition pdas")
+
+    // const edition = toBigNumber(params.originalSupply.addn(1));
+    const edition = toBigNumber(100)
+    const originalEditionMarkPda = findEditionMarkerPda(
+      MASTER_EDITION_ADDRESS,
+      edition
+    )
+
+    console.log("time for new nft")
+
+    // NEW NFT
+    const newMint = Keypair.generate()
+    const newMintAuthority = Keypair.generate() // Will be overwritten by edition PDA.
+    const newMetadataAddress = findMetadataPda(newMint.publicKey)
+    const newEditionAddress = findEditionPda(newMint.publicKey)
+
+
+    console.log("Setting up ixAccounts")
     const ixAccounts: MintNewEditionFromMasterEditionViaTokenInstructionAccounts = {
-      masterEdition,
-      payer,
-      tokenAccountOwner,
-      tokenAccount,
-      newMintAuthority,
-      newMetadataUpdateAuthority
+      newMetadata: newMetadataAddress,
+      newEdition: newEditionAddress,
+      masterEdition: originalEditionAddress,
+      newMint: newMint.publicKey,
+      editionMarkPda: originalEditionMarkPda,
+      newMintAuthority: newMintAuthority.publicKey,
+      payer: publicKey,
+      newMetadataUpdateAuthority: ART_UPDATE_AUTHORITY, // RETAIN ORIGINAL UPDATE AUTHORITY
+      metadata: originalMetadataAddress,
+      tokenAccountOwner: publicKey,
+      tokenAccount
     }
 
     // Edition shouldnt be hard coded, it should be send from a server, is this something Next.JS server can do? Can you store and update a varaible? no clue.
-    // Edition number could be derivied from whether or not the account exists, based on the deriviation inputs, would need to loop over the accounts, could be slow and have collision 
+    // Edition number could be derivied from whether or not the account exists, based on the deriviation inputs, would need to loop over the accounts, could be slow and have collision
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenArgs
     const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs = {
-      edition: 1
+      edition: edition
     }
 
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionArgs
@@ -128,7 +162,7 @@ const Home: NextPage = () => {
     )
 
     //👆🏽 Go back up and make sure all the accounts are set correctly
-
+      console.log("Adding ix to tx")
     tx.add(ixSendMoney)
     tx.add(ixMint)
 
@@ -138,6 +172,8 @@ const Home: NextPage = () => {
     // set whos paying for the tx
     tx.feePayer = publicKey!
 
+    try {
+      console.log("We trying!")
     const signature = await sendTransaction(tx, connection)
     const latestBlockHash = await connection.getLatestBlockhash()
     await connection.confirmTransaction({
@@ -145,8 +181,12 @@ const Home: NextPage = () => {
       lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
       signature
     })
+  }catch(e: any){
+    console.log("Error: ", e.message)
+  }
   }
 
+  // Make sure the connected wallet has enough funds to mint.
   useMemo(async () => {
     if (!publicKey) {
       return
@@ -218,7 +258,7 @@ const Home: NextPage = () => {
                     <button
                       disabled={!canMint}
                       onClick={doIt}
-                      className='pt-3 btn btn-primary'
+                      className=' border rounded-lg w-24 py-3 px-3 mt-4 border-black hover:bg-black hover:text-white'
                     >
                       {canMint ? 'Mint me' : 'Need more tokens'}
                     </button>
@@ -233,7 +273,7 @@ const Home: NextPage = () => {
       <footer>
         <div
           className='text-center p-4'
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.1);' }}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
         >
           Made with ❤️
         </div>

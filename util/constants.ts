@@ -2,7 +2,13 @@ import {
     LAMPORTS_PER_SOL,
     PublicKey,
   } from '@solana/web3.js'
+
   
+  export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
+    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+  );
+
+
   export const CUSTOM_TOKEN: PublicKey = new PublicKey(
     '6a6bpRFhujDp772G6EchpiDBBYbivNygwJLttDSiqpce' // Bnon token
   )
