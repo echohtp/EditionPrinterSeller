@@ -109,6 +109,8 @@ const Home: NextPage = () => {
       newMetadataUpdateAuthority
     }
 
+    // Edition shouldnt be hard coded, it should be send from a server, is this something Next.JS server can do? Can you store and update a varaible? no clue.
+    // Edition number could be derivied from whether or not the account exists, based on the deriviation inputs, would need to loop over the accounts, could be slow and have collision 
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenArgs
     const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs = {
       edition: 1
