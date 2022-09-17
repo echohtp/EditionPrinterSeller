@@ -80,6 +80,8 @@ const Home: NextPage = () => {
     //   })
     // )
 
+
+    // ALL OF THESE VARIABLES GO INTO ixAccounts 
     const tokenAccount = await getAssociatedTokenAddress(
       MASTER_EDITION_ADDRESS,
       publicKey!
