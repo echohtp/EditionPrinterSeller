@@ -1,30 +1,26 @@
 /* eslint-disable @next/next/no-img-element */
-import { useState } from 'react';
-import {
-  PublicKey,
-  Transaction,
-  SystemProgram,
-} from '@solana/web3.js';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { NextPage } from 'next';
-import Head from 'next/head';
-import Image from 'next/image';
-import styles from '../styles/Home.module.css';
+import { useState } from 'react'
+import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { useWallet, useConnection } from '@solana/wallet-adapter-react'
+import { NextPage } from 'next'
+import Head from 'next/head'
+import Image from 'next/image'
+import styles from '../styles/Home.module.css'
 import {
   createTransferInstruction,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  MintLayout,
-} from '@solana/spl-token';
+  MintLayout
+} from '@solana/spl-token'
 import {
   MintNewEditionFromMasterEditionViaTokenArgs,
   createMintNewEditionFromMasterEditionViaTokenInstruction,
   MintNewEditionFromMasterEditionViaTokenInstructionAccounts,
-  MintNewEditionFromMasterEditionViaTokenInstructionArgs,
-} from '@metaplex-foundation/mpl-token-metadata';
-import { useMemo } from 'react';
+  MintNewEditionFromMasterEditionViaTokenInstructionArgs
+} from '@metaplex-foundation/mpl-token-metadata'
+import { useMemo } from 'react'
 import {
   COST,
   CUSTOM_TOKEN,
@@ -32,67 +28,67 @@ import {
   ART_UPDATE_AUTHORITY,
   MASTER_EDITION_ADDRESS,
   EDITION_MARKER_BIT_SIZE,
-  PRICE,
-} from '../util/constants';
+  PRICE
+} from '../util/constants'
 
 const Home: NextPage = () => {
-  const { publicKey, signTransaction, connected, sendTransaction } =
-    useWallet();
-  const wallet = useWallet();
-  const { connection } = useConnection();
-  const [tokenBalance, setTokenBalance] = useState<number>(0);
-  const [canMint, setCanMint] = useState<boolean>(false);
+  const { publicKey, signTransaction, connected, sendTransaction } = useWallet()
+  const wallet = useWallet()
+  const { connection } = useConnection()
+  const [tokenBalance, setTokenBalance] = useState<number>(0)
+  const [canMint, setCanMint] = useState<boolean>(false)
 
   const doIt = async () => {
-    if (!publicKey) return;
+    if (!publicKey) return
 
-    console.log('Lets do the work');
-    console.log('Cost: ', COST);
-    console.log('SplToken: ', CUSTOM_TOKEN.toBase58());
-    console.log('Reciever: ', BANK.toBase58());
-    console.log('Sender: ', publicKey?.toBase58());
+    console.log('Lets do the work')
+    console.log('Cost: ', COST)
+    console.log('SplToken: ', CUSTOM_TOKEN.toBase58())
+    console.log('Reciever: ', BANK.toBase58())
+    console.log('Sender: ', publicKey?.toBase58())
 
-    // find empty edition to mint
-    // for (var i=0; i < 10000; i++){
+    let tx = new Transaction()
 
-    // }
-    //
-
-    let tx = new Transaction().add(
-      SystemProgram.createAccount({
-        fromPubkey: publicKey,
-        newAccountPubkey: publicKey,
-        lamports: await connection.getMinimumBalanceForRentExemption(
-          MintLayout.span
-        ),
-        space: MintLayout.span,
-        programId: TOKEN_PROGRAM_ID,
-      })
-    );
     // find ATA
-    const destination = await getAssociatedTokenAddress(CUSTOM_TOKEN, BANK);
-    const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!);
+    const destination = await getAssociatedTokenAddress(CUSTOM_TOKEN, BANK)
+    const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
 
-    console.log('Receiver ATA: ', destination.toBase58());
-    console.log('Sender ATA: ', source.toBase58());
+    console.log('Receiver ATA: ', destination.toBase58())
+    console.log('Sender ATA: ', source.toBase58())
 
-    // send me money
+    // Pay for the edition
     const ixSendMoney = createTransferInstruction(
       source,
       destination,
       publicKey!,
       COST
-    );
+    )
+
+    //👇🏽 THIS IS WHERE HELP IS NEEDED
+
+    // I saw this in the question below and im not sure why an account was created
+    // https://solana.stackexchange.com/questions/1758/different-errors-by-mint-new-edition-from-master-edition
+    // tx.add(
+    //   SystemProgram.createAccount({
+    //     fromPubkey: publicKey,
+    //     newAccountPubkey: publicKey,
+    //     lamports: await connection.getMinimumBalanceForRentExemption(
+    //       MintLayout.span
+    //     ),
+    //     space: MintLayout.span,
+    //     programId: TOKEN_PROGRAM_ID,
+    //   })
+    // )
 
     const tokenAccount = await getAssociatedTokenAddress(
       MASTER_EDITION_ADDRESS,
       publicKey!
-    );
-    const tokenAccountOwner = publicKey;
-    const payer = publicKey;
-    const masterEdition = MASTER_EDITION_ADDRESS;
-    const newMintAuthority = publicKey;
-    const newMetadataUpdateAuthority = ART_UPDATE_AUTHORITY;
+    )
+    const tokenAccountOwner = publicKey
+    const payer = publicKey
+    const masterEdition = MASTER_EDITION_ADDRESS
+    const newMintAuthority = publicKey
+    const newMetadataUpdateAuthority = ART_UPDATE_AUTHORITY
     // newMetadata: web3.PublicKey; //newMetadata New Metadata key (pda of ['metadata', program id, mint id])
     // newEdition: web3.PublicKey; //newEdition New Edition (pda of ['metadata', program id, mint id, 'edition'])
     // newMint: web3.PublicKey; //newMint Mint of new token - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY
@@ -102,72 +98,71 @@ const Home: NextPage = () => {
     // systemProgram?: web3.PublicKey;
     // rent?: web3.PublicKey;
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionAccounts
-    const ixAccounts: MintNewEditionFromMasterEditionViaTokenInstructionAccounts =
-      {
-        masterEdition,
-        payer,
-        tokenAccountOwner,
-        tokenAccount,
-        newMintAuthority,
-        newMetadataUpdateAuthority,
-      };
+    const ixAccounts: MintNewEditionFromMasterEditionViaTokenInstructionAccounts = {
+      masterEdition,
+      payer,
+      tokenAccountOwner,
+      tokenAccount,
+      newMintAuthority,
+      newMetadataUpdateAuthority
+    }
 
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenArgs
-    const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs =
-      {
-        edition: 1,
-      };
+    const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs = {
+      edition: 1
+    }
 
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionArgs
-    const ixTokenArgs: MintNewEditionFromMasterEditionViaTokenInstructionArgs =
-      {
-        mintNewEditionFromMasterEditionViaTokenArgs,
-      };
+    const ixTokenArgs: MintNewEditionFromMasterEditionViaTokenInstructionArgs = {
+      mintNewEditionFromMasterEditionViaTokenArgs
+    }
 
     // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#createMintNewEditionFromMasterEditionViaTokenInstruction
     const ixMint = createMintNewEditionFromMasterEditionViaTokenInstruction(
       ixAccounts,
       ixTokenArgs
-    );
+    )
 
-    tx.add(ixSendMoney);
-    tx.add(ixMint);
+    //👆🏽 Go back up and make sure all the accounts are set correctly
+
+    tx.add(ixSendMoney)
+    tx.add(ixMint)
 
     // get recent blockhash
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
 
     // set whos paying for the tx
-    tx.feePayer = publicKey!;
+    tx.feePayer = publicKey!
 
-    const signature = await sendTransaction(tx, connection);
-    const latestBlockHash = await connection.getLatestBlockhash();
+    const signature = await sendTransaction(tx, connection)
+    const latestBlockHash = await connection.getLatestBlockhash()
     await connection.confirmTransaction({
       blockhash: latestBlockHash.blockhash,
       lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-      signature,
-    });
-  };
+      signature
+    })
+  }
 
   useMemo(async () => {
     if (!publicKey) {
-      return;
+      return
     }
     // public key from the address you want to check the balance for
-    const ownerPublicKey = new PublicKey(publicKey);
+    const ownerPublicKey = new PublicKey(publicKey)
 
     // public key from the token contract address
-    const tokenPublicKey = new PublicKey(CUSTOM_TOKEN);
+    const tokenPublicKey = new PublicKey(CUSTOM_TOKEN)
 
     const balance = await connection.getParsedTokenAccountsByOwner(
       ownerPublicKey,
       { mint: tokenPublicKey }
-    );
+    )
 
     const tokenBalance =
-      balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount;
-    setTokenBalance(tokenBalance);
-    tokenBalance as number > PRICE ? setCanMint(true) : setCanMint(false);
-  }, [publicKey]);
+      balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
+    setTokenBalance(tokenBalance)
+    ;(tokenBalance as number) > PRICE ? setCanMint(true) : setCanMint(false)
+  }, [publicKey])
 
   return (
     <div className='flex flex-col min-h-screen'>
@@ -216,9 +211,13 @@ const Home: NextPage = () => {
                     <p className='mt-2 font-sans font-light text-slate-700'>
                       It is your time to mint.
                     </p>
-                    <button disabled={!canMint} onClick={doIt} className="pt-3 btn btn-primary">
-                        {canMint ? 'Mint me' : 'Need more tokens'}
-                      </button>
+                    <button
+                      disabled={!canMint}
+                      onClick={doIt}
+                      className='pt-3 btn btn-primary'
+                    >
+                      {canMint ? 'Mint me' : 'Need more tokens'}
+                    </button>
                   </div>
                 )}
               </div>
@@ -236,7 +235,7 @@ const Home: NextPage = () => {
         </div>
       </footer>
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
