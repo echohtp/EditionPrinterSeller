@@ -166,10 +166,7 @@ const Home: NextPage = () => {
     const tokenBalance =
       balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount;
     setTokenBalance(tokenBalance);
-    console.log('Token balance: ', tokenBalance);
-    console.log('Cost: ', PRICE);
     tokenBalance as number > PRICE ? setCanMint(true) : setCanMint(false);
-    console.log("Can I mint? ", canMint)
   }, [publicKey]);
 
   return (
