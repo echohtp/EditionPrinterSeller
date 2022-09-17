@@ -49,6 +49,11 @@ const Home: NextPage = () => {
     console.log('Reciever: ', BANK.toBase58())
     console.log('Sender: ', publicKey?.toBase58())
 
+    // find empty edition to mint
+
+    //
+
+
     let tx = new Transaction().add(
       SystemProgram.createAccount({
         fromPubkey: publicKey,
@@ -90,29 +95,34 @@ const Home: NextPage = () => {
     // tokenProgram?: web3.PublicKey;
     // systemProgram?: web3.PublicKey;
     // rent?: web3.PublicKey;
+    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionAccounts
     const ixAccounts: MintNewEditionFromMasterEditionViaTokenInstructionAccounts = {
       masterEdition,
       payer,
       tokenAccountOwner,
-      tokenAccount
+      tokenAccount,
+      newMintAuthority,
+      newMetadataUpdateAuthority
     }
 
+    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenArgs
     const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs = {
       edition: 1
     }
+
+    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionArgs
     const ixTokenArgs: MintNewEditionFromMasterEditionViaTokenInstructionArgs = {
       mintNewEditionFromMasterEditionViaTokenArgs
     }
-
+    
+    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#createMintNewEditionFromMasterEditionViaTokenInstruction
     const ixMint = createMintNewEditionFromMasterEditionViaTokenInstruction(
       ixAccounts,
       ixTokenArgs
     )
 
     tx.add(ixSendMoney)
-    // tx.add(ixMint)
-
-    // COPY
+    tx.add(ixMint)
 
     // get recent blockhash
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash

@@ -19,6 +19,5 @@ import {
     '28BpDQ1BrwbrQtEimBoh5CX7i2WnwwNZ9yQG5L6V2adw'  // nft to print here
   )
   
-  export const MINT_SIZE = 1500 // This is wrong, figure it out correctly 
   export const PRICE = 100
   export const COST: number = PRICE * LAMPORTS_PER_SOL // put token decimals here or you will have a problem
