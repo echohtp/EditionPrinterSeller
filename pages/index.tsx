@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import {
-  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
   SystemProgram,
@@ -33,6 +32,7 @@ import {
   ART_UPDATE_AUTHORITY,
   MASTER_EDITION_ADDRESS,
   EDITION_MARKER_BIT_SIZE,
+  PRICE,
 } from '../util/constants';
 
 const Home: NextPage = () => {
@@ -53,7 +53,9 @@ const Home: NextPage = () => {
     console.log('Sender: ', publicKey?.toBase58());
 
     // find empty edition to mint
+    // for (var i=0; i < 10000; i++){
 
+    // }
     //
 
     let tx = new Transaction().add(
@@ -165,7 +167,9 @@ const Home: NextPage = () => {
       balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount;
     setTokenBalance(tokenBalance);
     console.log('Token balance: ', tokenBalance);
-    tokenBalance > COST ? setCanMint(true) : setCanMint(false);
+    console.log('Cost: ', PRICE);
+    tokenBalance as number > PRICE ? setCanMint(true) : setCanMint(false);
+    console.log("Can I mint? ", canMint)
   }, [publicKey]);
 
   return (
@@ -215,7 +219,7 @@ const Home: NextPage = () => {
                     <p className='mt-2 font-sans font-light text-slate-700'>
                       It is your time to mint.
                     </p>
-                    <button disabled={!canMint} onClick={doIt} className="pt-3">
+                    <button disabled={!canMint} onClick={doIt} className="pt-3 btn btn-primary">
                         {canMint ? 'Mint me' : 'Need more tokens'}
                       </button>
                   </div>
