@@ -3,6 +3,7 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
+  SystemProgram
 } from '@solana/web3.js'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
@@ -10,7 +11,10 @@ import { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
-import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token'
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddress
+} from '@solana/spl-token'
 import {
   MintNewEditionFromMasterEditionViaTokenArgs,
   createMintNewEditionFromMasterEditionViaTokenInstruction,
@@ -18,48 +22,15 @@ import {
   MintNewEditionFromMasterEditionViaTokenInstructionArgs
 } from '@metaplex-foundation/mpl-token-metadata'
 import { useMemo } from 'react'
-
-const TOKEN_PROGRAM_ID: PublicKey = new PublicKey(
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
-)
-
-const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID: PublicKey = new PublicKey(
-  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
-)
-
-const CUSTOM_TOKEN: PublicKey = new PublicKey(
-  '6a6bpRFhujDp772G6EchpiDBBYbivNygwJLttDSiqpce' // Bnon token
-)
-
-const BANK: PublicKey = new PublicKey(
-  '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC'
-)
-
-const ART_UPDATE_AUTHORITY: PublicKey = new PublicKey(
-  '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC'
-)
-
-const MASTER_EDITION_ADDRESS = new PublicKey(
-  '28BpDQ1BrwbrQtEimBoh5CX7i2WnwwNZ9yQG5L6V2adw'  // nft to print here
-)
-
-const COST: number = 100 * LAMPORTS_PER_SOL // put token decimals here or you will have a problem
-
-async function findAssociatedTokenAddress (
-  walletAddress: PublicKey,
-  tokenMintAddress: PublicKey
-): Promise<PublicKey> {
-  return (
-    await PublicKey.findProgramAddress(
-      [
-        walletAddress.toBuffer(),
-        TOKEN_PROGRAM_ID.toBuffer(),
-        tokenMintAddress.toBuffer()
-      ],
-      SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
-    )
-  )[0]
-}
+import {
+  COST,
+  CUSTOM_TOKEN,
+  BANK,
+  SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  ART_UPDATE_AUTHORITY,
+  MASTER_EDITION_ADDRESS
+} from '../util/constants'
 
 const Home: NextPage = () => {
   const { publicKey, signTransaction, connected, sendTransaction } = useWallet()
@@ -77,7 +48,15 @@ const Home: NextPage = () => {
     console.log('Reciever: ', BANK.toBase58())
     console.log('Sender: ', publicKey?.toBase58())
 
-    let tx = new Transaction()
+    let tx = new Transaction().add(
+      SystemProgram.createAccount({
+        fromPubkey: publicKey,
+        newAccountPubkey: publicKey,
+        lamports: await connection.getMinimumBalanceForRentExemption(1500),
+        space: 1500, // figure this out
+        programId: TOKEN_PROGRAM_ID
+      })
+    )
     // find ATA
     const destination = await getAssociatedTokenAddress(CUSTOM_TOKEN, BANK)
     const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
@@ -93,27 +72,28 @@ const Home: NextPage = () => {
       COST
     )
 
-      const tokenAccount = await getAssociatedTokenAddress(MASTER_EDITION_ADDRESS, publicKey! )
-      const tokenAccountOwner = publicKey 
-      const payer = publicKey
-      const masterEdition = MASTER_EDITION_ADDRESS
-      const newMintAuthority = ART_UPDATE_AUTHORITY
-      const newMetadataUpdateAuthority = ART_UPDATE_AUTHORITY
-    // newMetadata: web3.PublicKey;
-    // newEdition: web3.PublicKey;
-    // newMint: web3.PublicKey;
-    // editionMarkPda: web3.PublicKey;
-    // metadata: web3.PublicKey;
+    const tokenAccount = await getAssociatedTokenAddress(
+      MASTER_EDITION_ADDRESS,
+      publicKey!
+    )
+    const tokenAccountOwner = publicKey
+    const payer = publicKey
+    const masterEdition = MASTER_EDITION_ADDRESS
+    const newMintAuthority = publicKey
+    const newMetadataUpdateAuthority = ART_UPDATE_AUTHORITY
+    // newMetadata: web3.PublicKey; //newMetadata New Metadata key (pda of ['metadata', program id, mint id])
+    // newEdition: web3.PublicKey; //newEdition New Edition (pda of ['metadata', program id, mint id, 'edition'])
+    // newMint: web3.PublicKey; //newMint Mint of new token - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY
+    // editionMarkPda: web3.PublicKey; // will be checked for pre-existence. (pda of ['metadata', program id, master metadata mint id, 'edition', edition_number]) where edition_number is NOT the edition number you pass in args but actually edition_number = floor(edition/EDITION_MARKER_BIT_SIZE).
+    // metadata: web3.PublicKey; //
     // tokenProgram?: web3.PublicKey;
     // systemProgram?: web3.PublicKey;
     // rent?: web3.PublicKey;
     const ixAccounts: MintNewEditionFromMasterEditionViaTokenInstructionAccounts = {
-     masterEdition,
-     payer,
-     tokenAccountOwner,
-     tokenAccount, 
-
-     
+      masterEdition,
+      payer,
+      tokenAccountOwner,
+      tokenAccount
     }
 
     const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs = {
@@ -166,8 +146,8 @@ const Home: NextPage = () => {
     const tokenBalance =
       balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
     setTokenBalance(tokenBalance)
-    console.log("Token balance: ", tokenBalance);
-    (tokenBalance > COST) ? setCanMint(true) : setCanMint(false)
+    console.log('Token balance: ', tokenBalance)
+    tokenBalance > COST ? setCanMint(true) : setCanMint(false)
   }, [publicKey])
 
   return (
@@ -180,11 +160,15 @@ const Home: NextPage = () => {
       <WalletMultiButton />
       <main className={styles.main}>
         {!connected && <h1>Please connect wallet</h1>}
-        {connected && <button disabled={!canMint} onClick={doIt}>{ (canMint) ? "Mint me" : "Need more tokens" }</button>}
+        {connected && (
+          <button disabled={!canMint} onClick={doIt}>
+            {canMint ? 'Mint me' : 'Need more tokens'}
+          </button>
+        )}
       </main>
 
       <footer className={styles.footer}>
-      <h1>Made with ❤️ by 🍌</h1>
+        <h1>Made with ❤️ by 🍌</h1>
       </footer>
     </div>
   )
