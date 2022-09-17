@@ -30,7 +30,8 @@ import {
   CUSTOM_TOKEN,
   BANK,
   ART_UPDATE_AUTHORITY,
-  MASTER_EDITION_ADDRESS
+  MASTER_EDITION_ADDRESS,
+  EDITION_MARKER_BIT_SIZE
 } from '../util/constants'
 
 const Home: NextPage = () => {
