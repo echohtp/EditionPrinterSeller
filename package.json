@@ -9,9 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@metaplex-foundation/js": "^0.15.0",
+    "@metaplex-foundation/mpl-token-metadata": "^2.2.4",
+    "@solana-mobile/wallet-adapter-mobile": "^0.9.1",
+    "@solana/spl-token": "^0.3.5",
+    "@solana/wallet-adapter-base": "^0.9.17",
+    "@solana/wallet-adapter-react": "^0.15.19",
+    "@solana/wallet-adapter-react-ui": "^0.9.17",
+    "@solana/wallet-adapter-wallets": "^0.18.10",
+    "@solana/web3.js": "^1.62.0",
     "next": "12.3.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react": "^18.2.0",
+    "react-dom": "18.2.0",
+    "react-toastify": "^9.0.8"
   },
   "devDependencies": {
     "@types/node": "18.7.18",
