@@ -13,7 +13,10 @@ import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import {
   createTransferInstruction,
-  getAssociatedTokenAddress
+  getAssociatedTokenAddress,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  MintLayout
 } from '@solana/spl-token'
 import {
   MintNewEditionFromMasterEditionViaTokenArgs,
@@ -26,8 +29,6 @@ import {
   COST,
   CUSTOM_TOKEN,
   BANK,
-  SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
   ART_UPDATE_AUTHORITY,
   MASTER_EDITION_ADDRESS
 } from '../util/constants'
@@ -52,8 +53,8 @@ const Home: NextPage = () => {
       SystemProgram.createAccount({
         fromPubkey: publicKey,
         newAccountPubkey: publicKey,
-        lamports: await connection.getMinimumBalanceForRentExemption(1500),
-        space: 1500, // figure this out
+        lamports: await connection.getMinimumBalanceForRentExemption(MintLayout.span),
+        space: MintLayout.span,
         programId: TOKEN_PROGRAM_ID
       })
     )

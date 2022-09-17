@@ -3,15 +3,6 @@ import {
     PublicKey,
   } from '@solana/web3.js'
   
-
-export const TOKEN_PROGRAM_ID: PublicKey = new PublicKey(
-    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
-  )
-  
-  export const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID: PublicKey = new PublicKey(
-    'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'
-  )
-  
   export const CUSTOM_TOKEN: PublicKey = new PublicKey(
     '6a6bpRFhujDp772G6EchpiDBBYbivNygwJLttDSiqpce' // Bnon token
   )
