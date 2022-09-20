@@ -70,6 +70,8 @@ const SellNft: NextPage = () => {
   const wallet = useWallet()
   const { sendTransaction } = useWallet()
 
+
+  // Load the NFT supplied via url
   useMemo(async () => {
     setLoading(true)
     if (mint) {
@@ -107,10 +109,10 @@ const SellNft: NextPage = () => {
       treasuryOwnerBump: treasuryOwnerBump,
       name: nft?.name,
       description: nft.json?.description || '',
-      mutable: nft?.isMutable,
+      mutable: true,
       price: saleData.sellPrice,
       piecesInOneWallet: saleData.mintLimit,
-      startDate,
+      startDate: startDate,
       endDate: startDate + 100,
       gatingConfig: null
     }
@@ -205,7 +207,7 @@ const SellNft: NextPage = () => {
             className='px-4 py-4 border border-black rounded-lg'
             onClick={sellIt}
           >
-            Do the thing
+            Create Market
           </Button>
         </div>
       )}
