@@ -91,7 +91,7 @@ const Setup: NextPage = () => {
         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
         signature
       })
-    } catch (e) {
+    } catch (e:any) {
       console.log('Error: ', e.message)
     }
   }

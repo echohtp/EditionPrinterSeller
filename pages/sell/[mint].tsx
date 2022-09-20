@@ -10,7 +10,11 @@ import {
   createCreateMarketInstruction,
   CreateMarketInstructionArgs,
   CreateMarketInstructionAccounts,
-  findTreasuryOwnerAddress
+  findTreasuryOwnerAddress,
+  createInitSellingResourceInstruction,
+  InitSellingResourceInstructionAccounts,
+  InitSellingResourceInstructionArgs,
+  findVaultOwnerAddress
 } from '@metaplex-foundation/mpl-fixed-price-sale'
 import {
   PublicKey,
@@ -19,6 +23,11 @@ import {
   Keypair,
   Connection
 } from '@solana/web3.js'
+import * as bn from 'bn.js'
+
+
+import { createTokenAccount } from '../../util/utils'
+import { findMetadataPda, findMasterEditionV2Pda, findTokenWithMintByMintOperation, FindTokenWithMintByMintInput } from '@metaplex-foundation/js'
 
 const createStoreSchema = {
   type: 'object',
@@ -94,6 +103,71 @@ const SellNft: NextPage = () => {
     if (!mint) return
 
     setSending(true)
+    const connection = new Connection('https://ssc-dao.genesysgo.net')
+
+    // create selling resource
+
+
+      const [vaultOwner, vaultOwnerBump] = await findVaultOwnerAddress(new PublicKey(mint), wallet.publicKey);
+      const { tokenAccount: vault, createTokenTx } = await createTokenAccount({
+        payer: wallet.publicKey,
+        mint: new PublicKey(mint),
+        connection,
+        owner: vaultOwner,
+      });
+
+      const TXcreateTokenAccount = new Transaction()
+
+      TXcreateTokenAccount.add(createTokenTx)
+
+        // get recent blockhash
+        TXcreateTokenAccount.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
+
+    // set whos paying for the tx
+    TXcreateTokenAccount.feePayer = wallet.publicKey!
+
+    try {
+      const signature = await sendTransaction(TXcreateTokenAccount, connection)
+      const latestBlockHash = await connection.getLatestBlockhash()
+      await connection.confirmTransaction({
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature
+      })
+    } catch (e:any) {
+      console.log('Error: ', e.name," " , e.message)
+      return
+    }
+
+      const sellingResource = Keypair.generate();
+
+      const initSellingArgs: InitSellingResourceInstructionArgs = {
+          masterEditionBump: 0, // WHERE DOES THIS COME FROM?
+          vaultOwnerBump: vaultOwnerBump,
+          maxSupply: 0 // DOES THIS MEAN UNLIMITED?
+        
+      }
+      const metadata = findMetadataPda(new PublicKey(mint))
+      const masterEdition = findMasterEditionV2Pda(new PublicKey(mint))
+      const resourceToken = findTokenWithMintByMintOperation({mint: new PublicKey(mint), address: wallet.publicKey, addressType: "owner"})
+      const initSellingAccounts: InitSellingResourceInstructionAccounts = {
+        store: store, // this is unhappy
+        admin: wallet.publicKey,
+        sellingResource: sellingResource.publicKey,
+        sellingResourceOwner: wallet.publicKey,
+        metadata: metadata,
+        masterEdition: masterEdition,
+        resourceMint: new PublicKey(mint),
+        resourceToken: resourceToken, // this is unhappy
+        vault: vault.publicKey,
+        owner: vaultOwner,
+      }
+
+      const ixInitSellingResource = createInitSellingResourceInstruction(initSellingAccounts, initSellingArgs)
+
+    //
+
+
     const [treasuryOwner, treasuryOwnerBump] = await findTreasuryOwnerAddress(
       wallet.publicKey,
       new PublicKey(mint)
@@ -102,7 +176,6 @@ const SellNft: NextPage = () => {
     const saleCurrency =
       saleData.splToken == '' ? saleData.sellCurrency : saleData.splToken
     const startDate = Math.round(Date.now() / 1000) + 5
-    const connection = new Connection('https://ssc-dao.genesysgo.net')
 
     const tx = new Transaction()
     const args: CreateMarketInstructionArgs = {
