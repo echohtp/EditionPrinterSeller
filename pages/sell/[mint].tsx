@@ -4,8 +4,14 @@ import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useMemo, useState } from 'react'
 import { Metaplex, Nft, Metadata } from '@metaplex-foundation/js'
-import { useWallet} from '@solana/wallet-adapter-react'
-import {  createCreateMarketInstruction, CreateMarketInstructionArgs, CreateMarketInstructionAccounts, findTreasuryOwnerAddress } from '@metaplex-foundation/mpl-fixed-price-sale'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { Button } from 'antd'
+import {
+  createCreateMarketInstruction,
+  CreateMarketInstructionArgs,
+  CreateMarketInstructionAccounts,
+  findTreasuryOwnerAddress
+} from '@metaplex-foundation/mpl-fixed-price-sale'
 import {
   PublicKey,
   Transaction,
@@ -41,7 +47,7 @@ const createStoreSchema = {
       format: 'date-time'
     },
     mintLimit: {
-        type: 'number'
+      type: 'integer'
     }
   }
 }
@@ -56,13 +62,16 @@ const initSaleData = {
 
 const SellNft: NextPage = () => {
   const [nft, setNft] = useState<Nft | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [sending, setSending] = useState<boolean>(false)
   const [saleData, setSaleData] = useState(initSaleData)
   const router = useRouter()
   const { mint } = router.query
   const wallet = useWallet()
-  const {sendTransaction} = useWallet()
+  const { sendTransaction } = useWallet()
 
   useMemo(async () => {
+    setLoading(true)
     if (mint) {
       const connection = new Connection('https://ssc-dao.genesysgo.net')
       const metaplex = new Metaplex(connection)
@@ -73,6 +82,7 @@ const SellNft: NextPage = () => {
       if (nft.model == 'nft') {
         setNft(nft)
       }
+      setLoading(false)
     }
   }, [mint])
 
@@ -81,44 +91,72 @@ const SellNft: NextPage = () => {
     if (!nft) return
     if (!mint) return
 
+    setSending(true)
     const [treasuryOwner, treasuryOwnerBump] = await findTreasuryOwnerAddress(
-        wallet.publicKey,
-        new PublicKey(mint),
-      );
+      wallet.publicKey,
+      new PublicKey(mint)
+    )
 
-    const saleCurrency = (saleData.splToken == '') ? saleData.sellCurrency  : saleData.splToken
+    const saleCurrency =
+      saleData.splToken == '' ? saleData.sellCurrency : saleData.splToken
     const startDate = Math.round(Date.now() / 1000) + 5
     const connection = new Connection('https://ssc-dao.genesysgo.net')
 
     const tx = new Transaction()
-    const args: CreateMarketInstructionArgs  = {
-        treasuryOwnerBump: treasuryOwnerBump,
-        name: nft?.name,
-        description: nft.json?.description || "",
-        mutable: nft?.isMutable,
-        price: saleData.sellPrice,
-        piecesInOneWallet: saleData.mintLimit,
-        startDate,
-        endDate: startDate + 100,
-        gatingConfig: null
+    const args: CreateMarketInstructionArgs = {
+      treasuryOwnerBump: treasuryOwnerBump,
+      name: nft?.name,
+      description: nft.json?.description || '',
+      mutable: nft?.isMutable,
+      price: saleData.sellPrice,
+      piecesInOneWallet: saleData.mintLimit,
+      startDate,
+      endDate: startDate + 100,
+      gatingConfig: null
+    }
+    
+    let market = new Keypair();
+    const accounts: CreateMarketInstructionAccounts = {
+      market: market.publicKey,
+      store: wallet.publicKey,
+      sellingResourceOwner: wallet.publicKey,
+      sellingResource: new PublicKey(mint),
+      mint: new PublicKey(saleCurrency),
+      treasuryHolder: wallet.publicKey,
+      owner: wallet.publicKey
     }
 
-    const accounts: CreateMarketInstructionAccounts = { 
-        market: wallet.publicKey,
-        store: wallet.publicKey,
-        sellingResourceOwner: wallet.publicKey,
-        sellingResource: new PublicKey(mint),
-        mint: new PublicKey(saleCurrency),
-        treasuryHolder: wallet.publicKey,
-        owner: wallet.publicKey
-    }
-    console.log (args)
-    console.log(accounts)
+
+    console.log("================== ACCOUNTS ==================")
+    console.log("market: ", accounts['market'].toBase58())
+    console.log("store: ", accounts['store'].toBase58())
+    console.log("sellingResourceOwner: ", accounts['sellingResourceOwner'].toBase58())
+    console.log("sellingResource: ", accounts['sellingResource'].toBase58())
+    console.log("mint: ", accounts['mint'].toBase58())
+    console.log("treasuryHolder: ", accounts['treasuryHolder'].toBase58())
+    console.log("owner: ", accounts['owner'].toBase58())
+    console.log("==============================================")
+
+
+    console.log("=================== ARGS =====================")
+    console.log('treasuryOwnerBump: ', args['treasuryOwnerBump'])
+    console.log('name: ', args['name'])
+    console.log('description: ', args['description'])
+    console.log('mutable: ', args['mutable'])
+    console.log('price: ', args['price'])
+    console.log('piecesInOneWallet: ', args['piecesInOneWallet'])
+    console.log('startDate: ', args['startDate'])
+    console.log('endDate: ', args['endDate'])
+    console.log('gatingConfig: ', args['gatingConfig'])
+    console.log("==============================================")
+
+
+
     const ix = createCreateMarketInstruction(accounts, args)
-        
+
     tx.add(ix)
 
-    // get recent blockhash  
+    // get recent blockhash
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
 
     // set whos paying for the tx
@@ -133,14 +171,19 @@ const SellNft: NextPage = () => {
         signature
       })
     } catch (e:any) {
-      console.log('Error: ', e.message)
+      console.log('Error: ', e.name," " , e.message)
     }
+    setSending(false)
   }
-
 
   return (
     <>
-      {nft == null && (
+      {loading && nft == null && (
+        <>
+          <h1>Loading...</h1>
+        </>
+      )}
+      {!loading && nft == null && (
         <>
           <h1>Mint hash not supplied</h1>
         </>
@@ -155,9 +198,15 @@ const SellNft: NextPage = () => {
             schema={createStoreSchema}
             data={initSaleData}
             renderers={materialRenderers}
-            onChange={({ errors, data }) => console.log(data)}
+            onChange={({ errors, data }) => setSaleData(data)}
           />
-          <button className="px-4 py-4 border border-black rounded-lg" onClick={sellIt}>Do the thing</button>
+          <Button
+            loading={sending}
+            className='px-4 py-4 border border-black rounded-lg'
+            onClick={sellIt}
+          >
+            Do the thing
+          </Button>
         </div>
       )}
     </>

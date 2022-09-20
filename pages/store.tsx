@@ -23,7 +23,7 @@ import { JsonForms } from '@jsonforms/react'
 import { materialRenderers } from '@jsonforms/material-renderers'
 import { useMemo } from 'react'
 import { toast } from 'react-toastify'
-import { Metaplex, Nft, Metadata } from "@metaplex-foundation/js"
+import { Metaplex, Nft, Metadata } from '@metaplex-foundation/js'
 
 const createStoreSchema = {
   type: 'object',
@@ -48,7 +48,7 @@ const Setup: NextPage = () => {
   const [createStoreData, setCreateStoredata] = useState(initStoreData)
   const [stores, setStores] = useState<any[]>([])
   const [nfts, setNfts] = useState<any[]>([])
- 
+
   const initStore = async () => {
     if (wallet.publicKey == null) {
       console.log('need publickey')
@@ -77,7 +77,7 @@ const Setup: NextPage = () => {
     const ixCreateStore = createCreateStoreInstruction(accounts, args)
     tx.add(ixCreateStore)
 
-    // get recent blockhash  
+    // get recent blockhash
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
 
     // set whos paying for the tx
@@ -91,7 +91,7 @@ const Setup: NextPage = () => {
         lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
         signature
       })
-    } catch (e:any) {
+    } catch (e) {
       console.log('Error: ', e.message)
     }
   }
@@ -102,53 +102,64 @@ const Setup: NextPage = () => {
       return
     }
     const connection = new Connection('https://ssc-dao.genesysgo.net')
-    
-    const accounts = await connection.getParsedProgramAccounts(new PublicKey("SaLeTjyUa5wXHnGuewUSyJ5JWZaHwz3TxqUntCE9czo"),{
-      filters: [{
-        memcmp: {offset: 0, bytes: "Nn25MFiXzvM"}
-      },{memcmp:{offset: 8, bytes: publicKey.toBase58()}}]
-    })
-    console.log("Accounts we found:")
+
+    const accounts = await connection.getParsedProgramAccounts(
+      new PublicKey('SaLeTjyUa5wXHnGuewUSyJ5JWZaHwz3TxqUntCE9czo'),
+      {
+        filters: [
+          {
+            memcmp: { offset: 0, bytes: 'Nn25MFiXzvM' }
+          },
+          { memcmp: { offset: 8, bytes: publicKey.toBase58() } }
+        ]
+      }
+    )
+    console.log('Accounts we found:')
     console.log(accounts)
     setStores(accounts)
   }, [publicKey])
 
   // we have a store now, sell some nfts, find master editions
-  useMemo(async ()=>{
-    if (publicKey){
-    const connection = new Connection('https://ssc-dao.genesysgo.net')
-    const metaplex = new Metaplex(connection)
+  useMemo(async () => {
+    if (publicKey) {
+      const connection = new Connection('https://ssc-dao.genesysgo.net')
+      const metaplex = new Metaplex(connection)
 
-    try{ 
-    const metadatas = await metaplex.nfts().findAllByOwner({ owner: publicKey }).run()
-    
-    let ourMetadatas = metadatas.filter((n)=> n.updateAuthorityAddress.toBase58() === publicKey.toBase58())
-    
-    console.log("we found some nfts from metaplex: ", ourMetadatas.length)
-    // STILL NEED TO FILTER FOR ONLY MASTER EDITIONS
-    console.log("our nfts")
-    console.log(ourMetadatas)
-    let loadedNfts: Nft[] = []
-    for (var i=0; i < ourMetadatas.length; i++){
-      let ourMD = ourMetadatas[i]
-      if (ourMD.model == "metadata"){
-        const loadedNft = await metaplex.nfts().load({metadata: ourMD}).run()
-        console.log("we loaded this")
-        console.log(loadedNft)  
-        if (loadedNft.model == "nft")
-          loadedNfts.push(loadedNft)
-          console.log("found this thing")
-          console.log(loadedNft)
+      try {
+        const metadatas = await metaplex
+          .nfts()
+          .findAllByOwner({ owner: publicKey })
+          .run()
+
+        let ourMetadatas = metadatas.filter(
+          n => n.updateAuthorityAddress.toBase58() === publicKey.toBase58()
+        )
+
+        console.log('we found some nfts from metaplex: ', ourMetadatas.length)
+        // STILL NEED TO FILTER FOR ONLY MASTER EDITIONS
+        console.log('our nfts')
+        console.log(ourMetadatas)
+        let loadedNfts: Nft[] = []
+        for (var i = 0; i < ourMetadatas.length; i++) {
+          let ourMD = ourMetadatas[i]
+          if (ourMD.model == 'metadata') {
+            const loadedNft = await metaplex
+              .nfts()
+              .load({ metadata: ourMD })
+              .run()
+            console.log('we loaded this')
+            console.log(loadedNft)
+            if (loadedNft.model == 'nft') loadedNfts.push(loadedNft)
+            console.log('found this thing')
+            console.log(loadedNft)
+          }
+        }
+
+        setNfts(loadedNfts)
+      } catch (e) {
+        console.log(e)
       }
     }
-    
-    setNfts(loadedNfts)
-
-    }catch (e: any){
-      console.log(e)
-    }
-    }
-
   }, [stores])
 
   return (
@@ -197,42 +208,40 @@ const Setup: NextPage = () => {
             </a>
           </div>
           <div>
+            {/* We are connected and dont have a store  */}
             {connected && stores.length == 0 && (
-              // <div className='text-center px-3 pb-6 pt-2'>
-              //   <p className='mt-2 font-sans font-light text-slate-700'>
-              //     It is your time to mint.
-              //   </p>
-              //   <button
-              //     // disabled={!canMint}
-              //     onClick={doIt}
-              //     className=' border rounded-lg w-24 py-3 px-3 mt-4 border-black hover:bg-black hover:text-white'
-              //   >
-              //     {canMint ? 'Mint me' : 'Need more tokens'}
-              //   </button>
-              // </div>
               <>
                 <h1>Setup Store</h1>
                 <h2>Create markets to sell a master edition NFT </h2>
-                
+
                 <JsonForms
                   schema={createStoreSchema}
                   data={initStoreData}
                   renderers={materialRenderers}
                   onChange={({ errors, data }) => setCreateStoredata(data)}
                 />
-                <button className='px-6 py-6 border rounded-lg border-black ' onClick={initStore}>Create store</button>
+                <button
+                  className='px-6 py-6 border rounded-lg border-black '
+                  onClick={initStore}
+                >
+                  Create store
+                </button>
               </>
             )}
 
-          {connected && stores.length > 0 && nfts.length > 0 && (
-          <div className="grid grid-cols-1">
-          {nfts.map((n: Nft)=>
-          <div className='px-4 py-4 my-4 border border-black border-dashed'>
-            <Link href={`/mint/${n.mint.address}`}>{n.json?.name}</Link>
-            <img height={100} width={100}  src={n.json?.image}/>
-            <Link href={`/sell/${n.mint.address}`}><button>Sell it</button></Link>
-          </div>)}
-          </div>)}
+            {connected && stores.length > 0 && nfts.length > 0 && (
+              <div className='grid grid-cols-1'>
+                {nfts.map((n: Nft) => (
+                  <div className='px-4 py-4 my-4 border border-black border-dashed'>
+                    <Link href={`/mint/${n.mint.address}`}>{n.json?.name}</Link>
+                    <img height={100} width={100} src={n.json?.image} />
+                    <Link href={`/sell/${n.mint.address}`}>
+                      <button>Sell it</button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
