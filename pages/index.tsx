@@ -17,27 +17,17 @@ import {
   toBigNumber,
   findMasterEditionV2Pda,
   findMetadataPda,
-  findEditionPda
+  findEditionPda,
+  findAssociatedTokenAccountPda
 } from '@metaplex-foundation/js'
 import styles from '../styles/Home.module.css'
-import {
-  createTransferInstruction,
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  MintLayout
-} from '@solana/spl-token'
-import {
-  MintNewEditionFromMasterEditionViaTokenArgs,
-  createMintNewEditionFromMasterEditionViaTokenInstruction,
-  MintNewEditionFromMasterEditionViaTokenInstructionAccounts,
-  MintNewEditionFromMasterEditionViaTokenInstructionArgs
-} from '@metaplex-foundation/mpl-token-metadata'
+
+
 import {
   Metaplex,
-  findEditionMarkerPda,
   walletAdapterIdentity
-} from '@metaplex-foundation/js'
+} from '@0xbanana/js'
+
 import { useMemo } from 'react'
 import {
   COST,
@@ -49,6 +39,7 @@ import {
   PRICE,
   TOKEN_METADATA_PROGRAM_ID
 } from '../util/constants'
+import { toast } from 'react-toastify'
 
 const Home: NextPage = () => {
   const { publicKey, signTransaction, connected, sendTransaction } = useWallet()
@@ -59,6 +50,7 @@ const Home: NextPage = () => {
 
   const doIt = async () => {
     if (!publicKey) return
+    console.log("yerp")
 
     const connection = new Connection('https://ssc-dao.genesysgo.net')
 
@@ -66,124 +58,7 @@ const Home: NextPage = () => {
       walletAdapterIdentity(wallet)
     )
 
-    const nft = await metaplex
-      .nfts()
-      .findByMint({ mintAddress: MASTER_EDITION_ADDRESS })
-      .run()
-
-    console.log('Lets do the work')
-    console.log('Cost: ', COST)
-    console.log('SplToken: ', CUSTOM_TOKEN.toBase58())
-    console.log('Reciever: ', BANK.toBase58())
-    console.log('Sender: ', publicKey?.toBase58())
-
-    let tx = new Transaction()
-
-    // find ATA
-    const destination = await getAssociatedTokenAddress(CUSTOM_TOKEN, BANK)
-    const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
-
-    console.log('Receiver ATA: ', destination.toBase58())
-    console.log('Sender ATA: ', source.toBase58())
-
-    // Pay for the edition
-    const ixSendMoney = createTransferInstruction(
-      source,
-      destination,
-      publicKey!,
-      COST
-    )
-      console.log("Created ixSendMoney")
-    //👇🏽 THIS IS WHERE HELP IS NEEDED
-
-    // ALL OF THESE VARIABLES GO INTO ixAccounts
-    const tokenAccount = await getAssociatedTokenAddress(
-      MASTER_EDITION_ADDRESS,
-      publicKey
-    )
-
-    console.log("Found Token Account")
-
-    // ORIGINAL NFT
-    const originalMetadataAddress = findMetadataPda(MASTER_EDITION_ADDRESS)
-    const originalEditionAddress = findMasterEditionV2Pda(
-      MASTER_EDITION_ADDRESS
-    )
-
-    console.log("Found edition pdas")
-
-    // const edition = toBigNumber(params.originalSupply.addn(1));
-    const edition = toBigNumber(100)
-    const originalEditionMarkPda = findEditionMarkerPda(
-      MASTER_EDITION_ADDRESS,
-      edition
-    )
-
-    console.log("time for new nft")
-
-    // NEW NFT
-    const newMint = Keypair.generate()
-    const newMintAuthority = Keypair.generate() // Will be overwritten by edition PDA.
-    const newMetadataAddress = findMetadataPda(newMint.publicKey)
-    const newEditionAddress = findEditionPda(newMint.publicKey)
-
-
-    console.log("Setting up ixAccounts")
-    const ixAccounts: MintNewEditionFromMasterEditionViaTokenInstructionAccounts = {
-      newMetadata: newMetadataAddress,
-      newEdition: newEditionAddress,
-      masterEdition: originalEditionAddress,
-      newMint: newMint.publicKey,
-      editionMarkPda: originalEditionMarkPda,
-      newMintAuthority: newMintAuthority.publicKey,
-      payer: publicKey,
-      newMetadataUpdateAuthority: ART_UPDATE_AUTHORITY, // RETAIN ORIGINAL UPDATE AUTHORITY
-      metadata: originalMetadataAddress,
-      tokenAccountOwner: publicKey,
-      tokenAccount
-    }
-
-    // Edition shouldnt be hard coded, it should be send from a server, is this something Next.JS server can do? Can you store and update a varaible? no clue.
-    // Edition number could be derivied from whether or not the account exists, based on the deriviation inputs, would need to loop over the accounts, could be slow and have collision
-    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenArgs
-    const mintNewEditionFromMasterEditionViaTokenArgs: MintNewEditionFromMasterEditionViaTokenArgs = {
-      edition: edition
-    }
-
-    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#MintNewEditionFromMasterEditionViaTokenInstructionArgs
-    const ixTokenArgs: MintNewEditionFromMasterEditionViaTokenInstructionArgs = {
-      mintNewEditionFromMasterEditionViaTokenArgs
-    }
-
-    // https://metaplex-foundation.github.io/metaplex-program-library/docs/token-metadata/index.html#createMintNewEditionFromMasterEditionViaTokenInstruction
-    const ixMint = createMintNewEditionFromMasterEditionViaTokenInstruction(
-      ixAccounts,
-      ixTokenArgs
-    )
-
-    //👆🏽 Go back up and make sure all the accounts are set correctly
-      console.log("Adding ix to tx")
-    tx.add(ixSendMoney)
-    tx.add(ixMint)
-
-    // get recent blockhash
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
-
-    // set whos paying for the tx
-    tx.feePayer = publicKey!
-
-    try {
-      console.log("We trying!")
-    const signature = await sendTransaction(tx, connection)
-    const latestBlockHash = await connection.getLatestBlockhash()
-    await connection.confirmTransaction({
-      blockhash: latestBlockHash.blockhash,
-      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-      signature
-    })
-  }catch(e: any){
-    console.log("Error: ", e.message)
-  }
+    const newNft = metaplex.nfts().printNewEdition({originalMint: MASTER_EDITION_ADDRESS}).run()
   }
 
   // Make sure the connected wallet has enough funds to mint.
@@ -256,7 +131,7 @@ const Home: NextPage = () => {
                       It is your time to mint.
                     </p>
                     <button
-                      disabled={!canMint}
+                      // disabled={!canMint}
                       onClick={doIt}
                       className=' border rounded-lg w-24 py-3 px-3 mt-4 border-black hover:bg-black hover:text-white'
                     >
