@@ -1,14 +1,18 @@
+/* eslint-disable @next/next/no-img-element */
 import { useState } from 'react'
 import {
-  LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
+  SystemProgram,
+  Keypair,
+  Connection
 } from '@solana/web3.js'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
+
 import styles from '../styles/Home.module.css'
 import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token'
 import { useMemo } from 'react'
@@ -30,6 +34,8 @@ const Home: NextPage = () => {
   const { connection } = useConnection()
   const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [canMint, setCanMint] = useState<boolean>(false)
+  
+  
 
   const doIt = async () => {
     if (!publicKey) return
@@ -89,8 +95,10 @@ const Home: NextPage = () => {
     toast("There was an error, please contact support with your payment transaction id")
     toast(signature)
   }
+
   }
 
+  // Make sure the connected wallet has enough funds to mint.
   useMemo(async () => {
     if (!publicKey) {
       return
@@ -109,11 +117,13 @@ const Home: NextPage = () => {
     const tokenBalance =
       balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
     setTokenBalance(tokenBalance)
+
     console.log("Token balance: ", tokenBalance);
     console.log("cost: ", COST);
     
     
     (tokenBalance * LAMPORTS_PER_SOL > COST) ? setCanMint(true) : setCanMint(false)
+
   }, [publicKey])
 
   return (
