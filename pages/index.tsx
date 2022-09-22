@@ -14,15 +14,19 @@ import Head from 'next/head'
 import Image from 'next/image'
 
 import styles from '../styles/Home.module.css'
-import { ART_UPDATE_AUTHORITY, CUSTOM_TOKEN, PRICE } from '../util/constants'
+import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token'
 import { useMemo } from 'react'
 import { toast } from 'react-toastify'
-import {createTransferInstruction} from '@solana/spl-token/src/instructions'
-import {getOrCreateAssociatedTokenAccount} from '@solana/spl-token/src/actions'
-import { TOKEN_PROGRAM_ID, Token} from '@solana/spl-token'
-import { getMint } from '@solana/spl-token/src/state'
-import { ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token/src/constants'
-import { BANK } from '../util/constants'
+
+const CUSTOM_TOKEN: PublicKey = new PublicKey(
+  process.env.NEXT_PUBLIC_SPLTOKEN!
+)
+
+const BANK: PublicKey = new PublicKey(
+  process.env.NEXT_PUBLIC_BANK!
+)
+
+const COST: number = 0.1 * LAMPORTS_PER_SOL // put token decimals here or you will have a problem
 
 const Home: NextPage = () => {
   const { publicKey, signTransaction, connected, sendTransaction } = useWallet()
@@ -34,34 +38,64 @@ const Home: NextPage = () => {
   
 
   const doIt = async () => {
-    if (publicKey == null) return
-    console.log("yerp")
+    if (!publicKey) return
 
-    const connection = new Connection('https://ssc-dao.genesysgo.net')
+    console.log('Lets do the work')
+    console.log('Cost: ', COST)
+    console.log('SplToken: ', CUSTOM_TOKEN.toBase58())
+    console.log('Reciever: ', BANK.toBase58())
+    console.log('Sender: ', publicKey?.toBase58())
 
-    // send a spl token tx
-    // const destination = await Token.getAssociatedTokenAddress(CUSTOM_TOKEN, BANK)
-    // const source = await Token.getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
-    const ata = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      BANK,
-      publicKey,
-      true
-    );
+    let tx = new Transaction()
+    // find ATA
+    const destination = await getAssociatedTokenAddress(CUSTOM_TOKEN, BANK)
+    const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
 
-    // catch it 
+    console.log('Receiver ATA: ', destination.toBase58())
+    console.log('Sender ATA: ', source.toBase58())
+
+    // send me money
+    const ixSendMoney = createTransferInstruction(
+      source,
+      destination,
+      publicKey!,
+      COST
+    )
+
+    tx.add(ixSendMoney)
     
 
-    // const signature = "signature_xsiowejwew"
-    // call our backend
-    // const resp = await fetch('api/mint', {
-    //   body: JSON.stringify({"signature": signature, "address": wallet.publicKey?.toBase58()}),
-    //   headers: {
-    //     "Content-Type": "application/json; charset=utf8",
-    //   },
-    //   method: 'POST'
-    // })
+    // COPY
+
+    // get recent blockhash
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
+
+    // set whos paying for the tx
+    tx.feePayer = publicKey!
+
+    const signature = await sendTransaction(tx, connection)
+    const latestBlockHash = await connection.getLatestBlockhash()
+    await connection.confirmTransaction({
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature
+    })
+    toast("Payment successful, minting edition...")
+    console.log("calling new mint")
+    try {
+    const newMint = await fetch('api/mint', {
+      body: JSON.stringify({"signature": signature, "address": publicKey.toBase58()}),
+      headers: {
+        "Content-Type": "application/json; charset=utf8"
+      },
+      method: "POST"
+    })
+    toast("Minting successful!")
+  }catch(e){
+    toast("There was an error, please contact support with your payment transaction id")
+    toast(signature)
+  }
+
   }
 
   // Make sure the connected wallet has enough funds to mint.
@@ -83,7 +117,13 @@ const Home: NextPage = () => {
     const tokenBalance =
       balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
     setTokenBalance(tokenBalance)
-    ;(tokenBalance as number) > PRICE ? setCanMint(true) : setCanMint(false)
+
+    console.log("Token balance: ", tokenBalance);
+    console.log("cost: ", COST);
+    
+    
+    (tokenBalance * LAMPORTS_PER_SOL > COST) ? setCanMint(true) : setCanMint(false)
+
   }, [publicKey])
 
   return (

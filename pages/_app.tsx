@@ -19,11 +19,12 @@ import {
 import { clusterApiUrl } from '@solana/web3.js';
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
-
+import 'tailwindcss/tailwind.css'
 import { ToastContainer } from 'react-toastify'
 
 // Default styles that can be overridden by your app
 require('@solana/wallet-adapter-react-ui/styles.css');
+import 'react-toastify/dist/ReactToastify.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
 
