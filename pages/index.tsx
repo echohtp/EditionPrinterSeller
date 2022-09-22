@@ -17,7 +17,7 @@ import styles from '../styles/Home.module.css'
 import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token'
 import { useMemo } from 'react'
 import { toast } from 'react-toastify'
-
+import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 const CUSTOM_TOKEN: PublicKey = new PublicKey(
   process.env.NEXT_PUBLIC_SPLTOKEN!
 )
