@@ -28,6 +28,10 @@ build
 yarn build
 ```
 
+
+## Deploy on Vercel or Netlify
+The easiest way to deploy is to use Vercel or Netlify. Please refer to their documentation for more details.
+
 ---
 ## ToDo
  - Atomic instructions would be nice
