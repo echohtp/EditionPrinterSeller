@@ -3,43 +3,41 @@ import { useState } from 'react'
 import {
   PublicKey,
   Transaction,
-  SystemProgram,
-  Keypair,
-  Connection
 } from '@solana/web3.js'
+import { Button } from 'antd'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
-
-import styles from '../styles/Home.module.css'
-import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token'
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddress
+} from '@solana/spl-token'
 import { useMemo } from 'react'
 import { toast } from 'react-toastify'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
-const CUSTOM_TOKEN: PublicKey = new PublicKey(
-  process.env.NEXT_PUBLIC_SPLTOKEN!
-)
+import styles from '../styles/Home.module.css'
 
-const BANK: PublicKey = new PublicKey(
-  process.env.NEXT_PUBLIC_BANK!
-)
-
-const COST: number = 0.1 * LAMPORTS_PER_SOL // put token decimals here or you will have a problem
+const CUSTOM_TOKEN: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_SPLTOKEN!)
+const BANK: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK!)
+const BANK_ATA: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK_ATA!)
+const COST: number = Number(process.env.NEXT_PUBLIC_PRICE!) * LAMPORTS_PER_SOL // put token decimals here or you may have a problem
 
 const Home: NextPage = () => {
-  const { publicKey, signTransaction, connected, sendTransaction } = useWallet()
+  const {
+    publicKey,
+    connected,
+    sendTransaction,
+  } = useWallet()
   const wallet = useWallet()
   const { connection } = useConnection()
   const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [canMint, setCanMint] = useState<boolean>(false)
-  
-  
+  const [loading, setLoading] = useState<boolean>(false)
 
   const doIt = async () => {
     if (!publicKey) return
-
+    setLoading(true)
     console.log('Lets do the work')
     console.log('Cost: ', COST)
     console.log('SplToken: ', CUSTOM_TOKEN.toBase58())
@@ -48,7 +46,7 @@ const Home: NextPage = () => {
 
     let tx = new Transaction()
     // find ATA
-    const destination = await getAssociatedTokenAddress(CUSTOM_TOKEN, BANK)
+    const destination = BANK_ATA
     const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
 
     console.log('Receiver ATA: ', destination.toBase58())
@@ -63,9 +61,6 @@ const Home: NextPage = () => {
     )
 
     tx.add(ixSendMoney)
-    
-
-    // COPY
 
     // get recent blockhash
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
@@ -73,29 +68,43 @@ const Home: NextPage = () => {
     // set whos paying for the tx
     tx.feePayer = publicKey!
 
-    const signature = await sendTransaction(tx, connection)
-    const latestBlockHash = await connection.getLatestBlockhash()
-    await connection.confirmTransaction({
-      blockhash: latestBlockHash.blockhash,
-      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-      signature
-    })
-    toast("Payment successful, minting edition...")
-    console.log("calling new mint")
     try {
-    const newMint = await fetch('api/mint', {
-      body: JSON.stringify({"signature": signature, "address": publicKey.toBase58()}),
-      headers: {
-        "Content-Type": "application/json; charset=utf8"
-      },
-      method: "POST"
-    })
-    toast("Minting successful!")
-  }catch(e){
-    toast("There was an error, please contact support with your payment transaction id")
-    toast(signature)
-  }
+      const signature = await sendTransaction(tx, connection)
+      const latestBlockHash = await connection.getLatestBlockhash()
+      await connection.confirmTransaction({
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature
+      })
 
+      toast('Payment successful, minting edition...')
+      console.log('calling new mint')
+      try {
+        const newMint = await fetch('api/mint', {
+          body: JSON.stringify({
+            signature: signature,
+            address: publicKey.toBase58()
+          }),
+          headers: {
+            'Content-Type': 'application/json; charset=utf8'
+          },
+          method: 'POST'
+        })
+        console.log(newMint)
+        
+        toast('Minting successful!')
+        setLoading(false)
+      } catch (e) {
+        toast(
+          'There was an error, please contact support with your payment transaction id'
+        )
+        toast(signature)
+        setLoading(false)
+      }
+    } catch (e) {
+      toast('Payment cancelled')
+      setLoading(false)
+    }
   }
 
   // Make sure the connected wallet has enough funds to mint.
@@ -118,12 +127,12 @@ const Home: NextPage = () => {
       balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
     setTokenBalance(tokenBalance)
 
-    console.log("Token balance: ", tokenBalance);
-    console.log("cost: ", COST);
-    
-    
-    (tokenBalance * LAMPORTS_PER_SOL > COST) ? setCanMint(true) : setCanMint(false)
+    console.log('Token balance: ', tokenBalance)
+    console.log('cost: ', COST)
 
+    tokenBalance * LAMPORTS_PER_SOL > COST
+      ? setCanMint(true)
+      : setCanMint(false)
   }, [publicKey])
 
   return (
@@ -173,13 +182,16 @@ const Home: NextPage = () => {
                     <p className='mt-2 font-sans font-light text-slate-700'>
                       It is your time to mint.
                     </p>
-                    <button
+                    <Button
+                      loading={loading}
                       disabled={!canMint}
                       onClick={doIt}
-                      className='w-24 px-3 py-3 mt-4 border border-black rounded-lg hover:bg-black hover:text-white'
+                      className='w-32 px-3 py-3 mt-4 font-light border border-dashed rounded-lg border-slate-700 hover:bg-slate-700 hover:text-white'
                     >
-                      {canMint ? 'Mint me' : 'Need more tokens'}
-                    </button>
+                      {canMint
+                        ? COST / LAMPORTS_PER_SOL + ' BNON'
+                        : 'Need more tokens'}
+                    </Button>
                   </div>
                 )}
               </div>
