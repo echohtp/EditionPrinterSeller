@@ -90,7 +90,8 @@ const Home: NextPage = () => {
           },
           method: 'POST'
         })
-        console.log(newMint)
+        const repJson = await newMint.json()
+        console.log(repJson)
         
         toast('Minting successful!')
         setLoading(false)
