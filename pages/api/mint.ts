@@ -63,13 +63,6 @@ export default async function handler (
 
   console.log('checking paid amount')
 
-  console.log((Number(Number(t1! - t0!).toPrecision(2))))
-  console.log("price: ", Number(PRICE))
-  console.log(Number(Number(t1! - t0!).toPrecision(2)) == Number(PRICE))
-  
-  
-  
-  
   if (Number(Number(t1! - t0!).toPrecision(2)) != Number(PRICE))
     res.status(200).send({ error: 'bad till' })
 

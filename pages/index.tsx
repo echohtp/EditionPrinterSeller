@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import {
   PublicKey,
+  SendTransactionError,
   Transaction,
 } from '@solana/web3.js'
 import { Button } from 'antd'
@@ -17,6 +18,7 @@ import { useMemo } from 'react'
 import { toast } from 'react-toastify'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import styles from '../styles/Home.module.css'
+import { Edition } from '../components/edition'
 
 const CUSTOM_TOKEN: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_SPLTOKEN!)
 const BANK: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK!)
@@ -34,6 +36,8 @@ const Home: NextPage = () => {
   const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [canMint, setCanMint] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
   const doIt = async () => {
     if (!publicKey) return
@@ -99,8 +103,10 @@ const Home: NextPage = () => {
         toast(
           'There was an error, please contact support with your payment transaction id'
         )
-        toast(signature)
         setLoading(false)
+        setError(true)
+        setErrorMessage(signature)
+        
       }
     } catch (e) {
       toast('Payment cancelled')
@@ -156,48 +162,21 @@ const Home: NextPage = () => {
                 open edition mints
               </span>
             </h2>
+            {error && 
+              <h2 className='mx-4 my-4 text-lg font-extrabold tracking-wider text-center uppercase bg-yellow-200 border-yellow-300 border-dashed sm:text-2xl font-plex'>
+              <span className='pb-1 sm:pb-2 whitespace-nowrap'>
+                {errorMessage}
+              </span>
+            </h2>}
           </div>
-          <div className='flex justify-center pt-5'>
-            <a className='inline-block max-w-xs overflow-hidden transition duration-300 ease-in-out shadow-xl cursor-pointer rounded-3xl hover:-translate-y-1 hover:scale-102 max-h-xs'>
-              <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
-                <img
-                  src='/yep-transformed1.png'
-                  className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
-                />
-                {/* <div className='absolute flex items-end justify-center w-full h-full bg-gradient-to-t from-black -inset-y-0'>
-                  <h1 className='mb-2 text-2xl font-bold text-white'>
-                    MonkeDAO
-                  </h1>
-                </div> */}
-              </div>
-              <div className='bg-white'>
-                {!connected && (
-                  <div className='px-3 pt-2 pb-6 text-center'>
-                    <p className='mt-2 font-sans font-light text-slate-700'>
-                      Please connect your wallet.
-                    </p>
-                  </div>
-                )}
-                {connected && (
-                  <div className='px-3 pt-2 pb-6 text-center'>
-                    <p className='mt-2 font-sans font-light text-slate-700'>
-                      It is your time to mint.
-                    </p>
-                    <Button
-                      loading={loading}
-                      disabled={!canMint}
-                      onClick={doIt}
-                      className='w-32 px-3 py-3 mt-4 font-light border border-dashed rounded-lg border-slate-700 hover:bg-slate-700 hover:text-white'
-                    >
-                      {canMint
-                        ? COST / LAMPORTS_PER_SOL + ' BNON'
-                        : 'Need more tokens'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </a>
-          </div>
+          <Edition 
+            connected={connected}
+            canMint={canMint}
+            cost={COST}
+            symbol={process.env.NEXT_PUBLIC_SYMBOL || ""}
+            doIt={doIt}
+            loading={loading}
+          />
         </div>
       </main>
 
