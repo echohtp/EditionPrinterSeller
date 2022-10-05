@@ -1,9 +1,11 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Metaplex, keypairIdentity, logTrace } from '@metaplex-foundation/js'
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { Keypair } from '@solana/web3.js'
 import bs58 from 'bs58'
+import { CUSTOM_TOKEN } from '../../util/constants'
+import { NATIVE_MINT } from '@solana/spl-token'
 
 const nftAddress = process.env.NEXT_PUBLIC_NFT!
 const PRICE = process.env.NEXT_PUBLIC_PRICE
@@ -47,7 +49,7 @@ export default async function handler (
   if (txResult == null) {
     console.log('couldnt confirm the tx')
     console.log('txresult: ', txResult)
-    res.status(200).send({ error: 'couldnt confirm tx' })
+    return res.status(200).send({ error: 'couldnt confirm tx' })
   }
 
   console.log('loaded tx')
@@ -58,13 +60,23 @@ export default async function handler (
   if (slot - 50 > txResult!.slot) res.status(200).send({ error: 'old tx' })
   console.log('slot ok')
 
-  let t0 = txResult!.meta?.postTokenBalances?.at(1)?.uiTokenAmount.uiAmount
-  let t1 = txResult!.meta?.preTokenBalances?.at(1)?.uiTokenAmount.uiAmount
-
   console.log('checking paid amount')
 
-  if (Number(Number(t1! - t0!).toPrecision(2)) != Number(PRICE))
-    res.status(200).send({ error: 'bad till' })
+  const t1 =
+  txResult!.meta?.postTokenBalances?.at(1)?.uiTokenAmount.uiAmount || txResult!.meta?.postBalances?.at(1)
+    
+  const t0 =
+  txResult!.meta?.preTokenBalances?.at(1)?.uiTokenAmount.uiAmount || txResult!.meta?.preBalances?.at(1)
+    
+  console.log(t0, t1)
+
+  console.log('t0: ', t0)
+  console.log('t1: ', t1)
+  console.log('diff: ', Number(Number(t1! - t0!).toPrecision(2)))
+  console.log(PRICE)
+
+  if (Number(t1! - t0!) != Number(PRICE) * LAMPORTS_PER_SOL)
+    return res.status(200).send({ error: 'bad till' })
 
   console.log('correct payment')
   console.log('checking keys')
@@ -74,7 +86,7 @@ export default async function handler (
   const reciever = acctKeys?.get(1)
 
   if (sender != req.body.address && reciever != BANK_ATA)
-    res.status(200).send({ error: 'bad accts' })
+    return res.status(200).send({ error: 'bad accts' })
 
   console.log('accounts are good')
 
@@ -96,6 +108,7 @@ export default async function handler (
 
   const newOwner = new PublicKey(req.body.address)
   console.log('printing')
+  try {
   const newNft = await metaplex
     .nfts()
     .printNewEdition({
@@ -105,4 +118,12 @@ export default async function handler (
     .run()
   console.log('printed!')
   return res.status(200).send({ acct: newNft.tokenAddress.toBase58() })
+  }catch(e:any){
+    // metaplex print failed
+    // process refunds here
+    // possible reasons: 
+    // at NFT Supply limit
+    // ...?
+    return res.status(200).send({ error: "Printing failed, you have been refunded!" })
+  }
 }

@@ -1,10 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react'
-import {
-  PublicKey,
-  SendTransactionError,
-  Transaction,
-} from '@solana/web3.js'
+import { PublicKey, SendTransactionError, Transaction } from '@solana/web3.js'
 import { Button } from 'antd'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
@@ -12,11 +8,12 @@ import { NextPage } from 'next'
 import Head from 'next/head'
 import {
   createTransferInstruction,
-  getAssociatedTokenAddress
+  getAssociatedTokenAddress,
+  NATIVE_MINT
 } from '@solana/spl-token'
 import { useMemo } from 'react'
 import { toast } from 'react-toastify'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
 import styles from '../styles/Home.module.css'
 import { Edition } from '../components/edition'
 
@@ -26,18 +23,14 @@ const BANK_ATA: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK_ATA!)
 const COST: number = Number(process.env.NEXT_PUBLIC_PRICE!) * LAMPORTS_PER_SOL // put token decimals here or you may have a problem
 
 const Home: NextPage = () => {
-  const {
-    publicKey,
-    connected,
-    sendTransaction,
-  } = useWallet()
+  const { publicKey, connected, sendTransaction } = useWallet()
   const wallet = useWallet()
   const { connection } = useConnection()
   const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [canMint, setCanMint] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<boolean>(false)
-  const [errorMessage, setErrorMessage] = useState<string>("")
+  const [errorMessage, setErrorMessage] = useState<string>('')
 
   const doIt = async () => {
     if (!publicKey) return
@@ -49,23 +42,30 @@ const Home: NextPage = () => {
     console.log('Sender: ', publicKey?.toBase58())
 
     let tx = new Transaction()
-    // find ATA
-    const destination = BANK_ATA
-    const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
+    if (CUSTOM_TOKEN.toBase58() != NATIVE_MINT.toBase58()) {
+      // find ATA
+      const destination = BANK_ATA
+      const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
 
-    console.log('Receiver ATA: ', destination.toBase58())
-    console.log('Sender ATA: ', source.toBase58())
+      console.log('Receiver ATA: ', destination.toBase58())
+      console.log('Sender ATA: ', source.toBase58())
 
-    // send me money
-    const ixSendMoney = createTransferInstruction(
-      source,
-      destination,
-      publicKey!,
-      COST
-    )
+      // send me money
 
-    tx.add(ixSendMoney)
-
+      const ixSendMoney = createTransferInstruction(
+        source,
+        destination,
+        publicKey!,
+        COST
+      )
+      tx.add(ixSendMoney)
+    } else {
+      tx.add(SystemProgram.transfer({
+        fromPubkey: publicKey,
+        toPubkey: BANK,
+        lamports: COST
+      }))
+    }
     // get recent blockhash
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
 
@@ -96,7 +96,7 @@ const Home: NextPage = () => {
         })
         const repJson = await newMint.json()
         console.log(repJson)
-        
+
         toast('Minting successful!')
         setLoading(false)
       } catch (e) {
@@ -106,10 +106,10 @@ const Home: NextPage = () => {
         setLoading(false)
         setError(true)
         setErrorMessage(signature)
-        
       }
     } catch (e) {
       toast('Payment cancelled')
+      console.log(e)
       setLoading(false)
     }
   }
@@ -124,23 +124,27 @@ const Home: NextPage = () => {
 
     // public key from the token contract address
     const tokenPublicKey = new PublicKey(CUSTOM_TOKEN)
+    console.log('tokenPK: ', tokenPublicKey.toBase58())
 
-    const balance = await connection.getParsedTokenAccountsByOwner(
-      ownerPublicKey,
-      { mint: tokenPublicKey }
-    )
-
-    const tokenBalance =
-      balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
-    setTokenBalance(tokenBalance)
+    let balance: any
+    if (tokenPublicKey.toBase58() == NATIVE_MINT.toBase58()) {
+      balance = await connection.getBalance(ownerPublicKey)
+      console.log("bal: ", balance)
+      setTokenBalance(balance)
+    } else {
+      balance = await connection.getParsedTokenAccountsByOwner(ownerPublicKey, {
+        mint: tokenPublicKey
+      })
+      setTokenBalance(balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount)
+    }
 
     console.log('Token balance: ', tokenBalance)
     console.log('cost: ', COST)
 
-    tokenBalance * LAMPORTS_PER_SOL > COST
+    balance * LAMPORTS_PER_SOL > COST
       ? setCanMint(true)
       : setCanMint(false)
-  }, [publicKey])
+  }, [publicKey, connected])
 
   return (
     <div className='flex flex-col min-h-screen'>
@@ -162,18 +166,19 @@ const Home: NextPage = () => {
                 open edition mints
               </span>
             </h2>
-            {error && 
+            {error && (
               <h2 className='mx-4 my-4 text-lg font-extrabold tracking-wider text-center uppercase bg-yellow-200 border-yellow-300 border-dashed sm:text-2xl font-plex'>
-              <span className='pb-1 sm:pb-2 whitespace-nowrap'>
-                {errorMessage}
-              </span>
-            </h2>}
+                <span className='pb-1 sm:pb-2 whitespace-nowrap'>
+                  {errorMessage}
+                </span>
+              </h2>
+            )}
           </div>
-          <Edition 
+          <Edition
             connected={connected}
             canMint={canMint}
             cost={COST}
-            symbol={process.env.NEXT_PUBLIC_SYMBOL || ""}
+            symbol={process.env.NEXT_PUBLIC_SYMBOL || ''}
             doIt={doIt}
             loading={loading}
           />
