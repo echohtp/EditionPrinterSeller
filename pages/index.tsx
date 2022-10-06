@@ -31,6 +31,9 @@ const Home: NextPage = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [timer, setTimer] = useState<any>()
+
+  const jokes =["Joke 1","Joke 2", "Joke 3", "Joke 4", "Joke 5", "Joke 6"]
 
   const doIt = async () => {
     if (!publicKey) return
@@ -113,6 +116,19 @@ const Home: NextPage = () => {
       setLoading(false)
     }
   }
+
+
+  // some funny toasts while we wait
+  // useMemo(()=>{
+  //   if (loading){
+  //     const interval = setInterval(()=>{
+  //       toast(jokes[Math.floor(Math.random()*jokes.length)])
+  //     },10000)
+  //   }else{
+  //     setTimer(clearInterval(timer))
+  //   }
+  // },[loading])
+
 
   // Make sure the connected wallet has enough funds to mint.
   useMemo(async () => {

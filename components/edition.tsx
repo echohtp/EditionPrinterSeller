@@ -1,5 +1,6 @@
 import { Button } from 'antd'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+import {toast} from 'react-toastify'
 export interface EditionProps {
   connected: boolean
   loading: boolean
@@ -16,7 +17,7 @@ export const Edition = (props: EditionProps) => {
       <a className='inline-block max-w-xs overflow-hidden transition duration-300 ease-in-out shadow-xl cursor-pointer rounded-3xl hover:-translate-y-1 hover:scale-102 max-h-xs'>
         <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
           <img
-            src='https://arweave.net/7arD7-TFT98uGlJuw7W_2ZAonWMlAh2Jh1xTm5cu2J4?ext=jpg'
+            src='/yep-transformed1.png'
             className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
           />
           {/* <div className='absolute flex items-end justify-center w-full h-full bg-gradient-to-t from-black -inset-y-0'>
