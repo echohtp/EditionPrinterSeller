@@ -72,13 +72,14 @@ export default async function handler (
 
   console.log('t0: ', t0)
   console.log('t1: ', t1)
-  console.log('diff: ', Number(Number(t1! - t0!).toPrecision(2)))
+  console.log('diff: ', Math.abs(t0! - t1!))
   console.log(PRICE)
+  console.log(Math.abs(t0! - t1!) != Number(PRICE))
+  
+  // if (Math.abs(t0! - t1!).toPrecision(3) != PRICE)
+  //   return res.status(200).send({ error: 'bad till' })
 
-  if (Number(t1! - t0!) != Number(PRICE) * LAMPORTS_PER_SOL)
-    return res.status(200).send({ error: 'bad till' })
-
-  console.log('correct payment')
+  // console.log('correct payment')
   console.log('checking keys')
 
   const acctKeys = txResult?.transaction.message.getAccountKeys()
