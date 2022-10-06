@@ -116,35 +116,29 @@ const Home: NextPage = () => {
 
   // Make sure the connected wallet has enough funds to mint.
   useMemo(async () => {
-    if (!publicKey) {
+    if (!wallet.publicKey) {
       return
     }
     // public key from the address you want to check the balance for
-    const ownerPublicKey = new PublicKey(publicKey)
+    const ownerPublicKey = new PublicKey(wallet.publicKey)
 
     // public key from the token contract address
     const tokenPublicKey = new PublicKey(CUSTOM_TOKEN)
-    console.log('tokenPK: ', tokenPublicKey.toBase58())
 
     let balance: any
     if (tokenPublicKey.toBase58() == NATIVE_MINT.toBase58()) {
       balance = await connection.getBalance(ownerPublicKey)
-      console.log("bal: ", balance)
-      setTokenBalance(balance)
+      console.log('bal: ', balance)
     } else {
       balance = await connection.getParsedTokenAccountsByOwner(ownerPublicKey, {
         mint: tokenPublicKey
       })
-      setTokenBalance(balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount)
+      balance = balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
     }
 
-    console.log('Token balance: ', tokenBalance)
-    console.log('cost: ', COST)
-
-    balance * LAMPORTS_PER_SOL > COST
-      ? setCanMint(true)
-      : setCanMint(false)
-  }, [publicKey, connected])
+    console.log(`token: ${tokenPublicKey.toBase58()} || balance: ${balance}`)
+    balance * COST ? setCanMint(true) : setCanMint(false)
+  }, [wallet.publicKey, connected])
 
   return (
     <div className='flex flex-col min-h-screen'>
