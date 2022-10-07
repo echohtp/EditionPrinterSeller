@@ -154,7 +154,7 @@ const Home: NextPage = () => {
 
     console.log(`token: ${tokenPublicKey.toBase58()} || balance: ${balance}`)
     
-    balance > Number(process.env.NEXT_PUBLIC_PRICE!) ? setCanMint(true) : setCanMint(false)
+    balance >= Number(process.env.NEXT_PUBLIC_PRICE!) ? setCanMint(true) : setCanMint(false)
   }, [wallet.publicKey, connected])
 
   return (
