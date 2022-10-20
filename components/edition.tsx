@@ -37,91 +37,91 @@ export const Edition = (props: EditionProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   // const [loading, setLoading] = useState<boolean>(false)
 
-  const mintIt = async () => {
-    if (!wallet.publicKey) return
-    setLoading(true)
-    console.log('Lets do the work')
-    console.log('Cost: ', cost)
-    console.log('SplToken: ', splToken)
-    console.log('Reciever: ', bank)
-    console.log('Sender: ', wallet.publicKey?.toBase58())
+  // const mintIt = async () => {
+  //   if (!wallet.publicKey) return
+  //   setLoading(true)
+  //   console.log('Lets do the work')
+  //   console.log('Cost: ', cost)
+  //   console.log('SplToken: ', splToken)
+  //   console.log('Reciever: ', bank)
+  //   console.log('Sender: ', wallet.publicKey?.toBase58())
 
-    let tx = new Transaction()
-    const splTokenPk = new PublicKey(splToken)
-    const bankPk = new PublicKey(bank)
-    if (splToken != NATIVE_MINT.toBase58()) {
-      // find ATA
-      const destination = bankAta
-      const source = await getAssociatedTokenAddress(splTokenPk, wallet.publicKey)
+  //   let tx = new Transaction()
+  //   const splTokenPk = new PublicKey(splToken)
+  //   const bankPk = new PublicKey(bank)
+  //   if (splToken != NATIVE_MINT.toBase58()) {
+  //     // find ATA
+  //     const destination = bankAta
+  //     const source = await getAssociatedTokenAddress(splTokenPk, wallet.publicKey)
 
-      console.log('Receiver ATA: ', destination)
-      console.log('Sender ATA: ', source.toBase58())
+  //     console.log('Receiver ATA: ', destination)
+  //     console.log('Sender ATA: ', source.toBase58())
 
-      // send me money
+  //     // send me money
 
-      const ixSendMoney = createTransferInstruction(
-        source,
-        new PublicKey(destination),
-        wallet.publicKey,
-        cost
-      )
-      tx.add(ixSendMoney)
-    } else {
-      tx.add(
-        SystemProgram.transfer({
-          fromPubkey: wallet.publicKey,
-          toPubkey: bankPk,
-          lamports: cost
-        })
-      )
-    }
-    // get recent blockhash
-    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
+  //     const ixSendMoney = createTransferInstruction(
+  //       source,
+  //       new PublicKey(destination),
+  //       wallet.publicKey,
+  //       cost
+  //     )
+  //     tx.add(ixSendMoney)
+  //   } else {
+  //     tx.add(
+  //       SystemProgram.transfer({
+  //         fromPubkey: wallet.publicKey,
+  //         toPubkey: bankPk,
+  //         lamports: cost
+  //       })
+  //     )
+  //   }
+  //   // get recent blockhash
+  //   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
 
-    // set whos paying for the tx
-    tx.feePayer = wallet.publicKey!
+  //   // set whos paying for the tx
+  //   tx.feePayer = wallet.publicKey!
 
-    try {
-      const signature = await wallet.sendTransaction(tx, connection)
-      const latestBlockHash = await connection.getLatestBlockhash()
-      await connection.confirmTransaction({
-        blockhash: latestBlockHash.blockhash,
-        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        signature
-      })
+  //   try {
+  //     const signature = await wallet.sendTransaction(tx, connection)
+  //     const latestBlockHash = await connection.getLatestBlockhash()
+  //     await connection.confirmTransaction({
+  //       blockhash: latestBlockHash.blockhash,
+  //       lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+  //       signature
+  //     })
 
-      toast('Payment successful, minting edition...')
-      console.log('calling new mint')
-      try {
-        const newMint = await fetch('api/mint', {
-          body: JSON.stringify({
-            signature: signature,
-            address: wallet.publicKey.toBase58()
-          }),
-          headers: {
-            'Content-Type': 'application/json; charset=utf8'
-          },
-          method: 'POST'
-        })
-        const repJson = await newMint.json()
-        console.log(repJson)
+  //     toast('Payment successful, minting edition...')
+  //     console.log('calling new mint')
+  //     try {
+  //       const newMint = await fetch('api/mint', {
+  //         body: JSON.stringify({
+  //           signature: signature,
+  //           address: wallet.publicKey.toBase58()
+  //         }),
+  //         headers: {
+  //           'Content-Type': 'application/json; charset=utf8'
+  //         },
+  //         method: 'POST'
+  //       })
+  //       const repJson = await newMint.json()
+  //       console.log(repJson)
 
-        toast('Minting successful!')
-        setLoading(false)
-      } catch (e) {
-        toast(
-          'There was an error, please contact support with your payment transaction id'
-        )
-        setLoading(false)
-        setError(true)
-        setErrorMessage(signature)
-      }
-    } catch (e) {
-      toast('Payment cancelled')
-      console.log(e)
-      setLoading(false)
-    }
-  }
+  //       toast('Minting successful!')
+  //       setLoading(false)
+  //     } catch (e) {
+  //       toast(
+  //         'There was an error, please contact support with your payment transaction id'
+  //       )
+  //       setLoading(false)
+  //       setError(true)
+  //       setErrorMessage(signature)
+  //     }
+  //   } catch (e) {
+  //     toast('Payment cancelled')
+  //     console.log(e)
+  //     setLoading(false)
+  //   }
+  // }
 
 
 
