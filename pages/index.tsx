@@ -207,9 +207,8 @@ const Home: NextPage = () => {
           </div>
           <div className='grid grid-cols-2 gap-8'>
             {mintsOnSale.map((saleItem, index) => (
-              <div>
+              <div key={index}>
                 <Edition
-                  key={index}
                   index={index}
                   connected={connected}
                   canMint={canMint}
