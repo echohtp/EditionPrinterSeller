@@ -1,30 +1,176 @@
 import { Button } from 'antd'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  NATIVE_MINT
+} from '@solana/spl-token'
 import {toast} from 'react-toastify'
+import { useMemo } from 'react'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { PublicKey } from '@solana/web3.js'
+import { Connection } from '@solana/web3.js'
+import { useState } from 'react'
+import Lightbox from 'react-image-lightbox'
+import { Transaction } from '@solana/web3.js'
+import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
+
 export interface EditionProps {
   connected: boolean
-  loading: boolean
   canMint: boolean
   cost: number
   symbol: string
   doIt: any
+  tokenMint: string
+  splToken: string
+  bank: string
+  bankAta: string
+  image: string
+  index: number
+  loading: boolean
 }
 
 export const Edition = (props: EditionProps) => {
-  const { connected, loading, canMint, cost, symbol, doIt } = props
+  const { connected, cost, symbol, tokenMint, image, splToken, bank, bankAta, doIt, index, loading } = props
+  const wallet = useWallet()
+  const connection = new Connection(process.env.NEXT_PUBLIC_RPC!)
+  const [canMint, setCanMint] = useState<boolean>(false)
+  const [isOpen, setIsOpen] = useState<boolean>(false)
+  // const [loading, setLoading] = useState<boolean>(false)
+
+  const mintIt = async () => {
+    if (!wallet.publicKey) return
+    setLoading(true)
+    console.log('Lets do the work')
+    console.log('Cost: ', cost)
+    console.log('SplToken: ', splToken)
+    console.log('Reciever: ', bank)
+    console.log('Sender: ', wallet.publicKey?.toBase58())
+
+    let tx = new Transaction()
+    const splTokenPk = new PublicKey(splToken)
+    const bankPk = new PublicKey(bank)
+    if (splToken != NATIVE_MINT.toBase58()) {
+      // find ATA
+      const destination = bankAta
+      const source = await getAssociatedTokenAddress(splTokenPk, wallet.publicKey)
+
+      console.log('Receiver ATA: ', destination)
+      console.log('Sender ATA: ', source.toBase58())
+
+      // send me money
+
+      const ixSendMoney = createTransferInstruction(
+        source,
+        new PublicKey(destination),
+        wallet.publicKey,
+        cost
+      )
+      tx.add(ixSendMoney)
+    } else {
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: bankPk,
+          lamports: cost
+        })
+      )
+    }
+    // get recent blockhash
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
+
+    // set whos paying for the tx
+    tx.feePayer = wallet.publicKey!
+
+    try {
+      const signature = await wallet.sendTransaction(tx, connection)
+      const latestBlockHash = await connection.getLatestBlockhash()
+      await connection.confirmTransaction({
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature
+      })
+
+      toast('Payment successful, minting edition...')
+      console.log('calling new mint')
+      try {
+        const newMint = await fetch('api/mint', {
+          body: JSON.stringify({
+            signature: signature,
+            address: wallet.publicKey.toBase58()
+          }),
+          headers: {
+            'Content-Type': 'application/json; charset=utf8'
+          },
+          method: 'POST'
+        })
+        const repJson = await newMint.json()
+        console.log(repJson)
+
+        toast('Minting successful!')
+        setLoading(false)
+      } catch (e) {
+        toast(
+          'There was an error, please contact support with your payment transaction id'
+        )
+        setLoading(false)
+        setError(true)
+        setErrorMessage(signature)
+      }
+    } catch (e) {
+      toast('Payment cancelled')
+      console.log(e)
+      setLoading(false)
+    }
+  }
+
+
+
+  useMemo(async () => {
+    if (!wallet.publicKey) {
+      return
+    }
+    // public key from the address you want to check the balance for
+    const ownerPublicKey = new PublicKey(wallet.publicKey)
+
+    // public key from the token contract address
+    const tokenPublicKey = new PublicKey(splToken)
+
+    let balance: any
+    if (tokenPublicKey.toBase58() == NATIVE_MINT.toBase58()) {
+      balance = await connection.getBalance(ownerPublicKey)
+      console.log('bal: ', balance)
+    } else {
+      balance = await connection.getParsedTokenAccountsByOwner(ownerPublicKey, {
+        mint: tokenPublicKey
+      })
+      balance = balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
+    }
+
+    console.log(`token: ${tokenPublicKey.toBase58()} (${balance})`)
+    
+
+    balance >= Number(cost)
+      ? setCanMint(true)
+      : setCanMint(false)
+  }, [wallet.publicKey, connected])
+
+
+
   return (
     <div className='flex justify-center pt-5'>
       <a className='inline-block max-w-xs overflow-hidden transition duration-300 ease-in-out shadow-xl cursor-pointer rounded-3xl hover:-translate-y-1 hover:scale-102 max-h-xs'>
         <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
-          <img
-            src='/yep-transformed1.png'
-            className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
+        {isOpen && (
+          <Lightbox
+            mainSrc={image}
+            onCloseRequest={() => setIsOpen(false)}
           />
-          {/* <div className='absolute flex items-end justify-center w-full h-full bg-gradient-to-t from-black -inset-y-0'>
-      <h1 className='mb-2 text-2xl font-bold text-white'>
-        MonkeDAO
-      </h1>
-    </div> */}
+        )}
+          <img
+            src={image + '?width=400'}
+            className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
+            onClick={()=> setIsOpen(true)}
+          />
         </div>
         <div className='bg-white'>
           {!connected && (
@@ -36,18 +182,20 @@ export const Edition = (props: EditionProps) => {
           )}
           {connected && (
             <div className='px-3 pt-2 pb-6 text-center'>
-              <p className='mt-2 font-sans font-light text-slate-700'>
+              {/* <p className='mt-2 font-sans font-light text-slate-700'>
                 It is your time to mint.
-              </p>
+              </p> */}
               <Button
                 loading={loading}
                 disabled={!canMint}
-                onClick={doIt}
-                className='w-32 px-3 py-3 mt-4 font-light border border-dashed rounded-lg border-slate-700 hover:bg-slate-700 hover:text-white'
+                onClick={()=>{
+                  doIt(cost, splToken, bank, bankAta, index)
+                }}
+                className='w-48 px-3 py-3 mt-4 font-light border border-dashed rounded-lg border-slate-700 hover:bg-slate-700 hover:text-white'
               >
                 {canMint
-                  ? cost / LAMPORTS_PER_SOL + ' ' + symbol
-                  : 'Need more tokens'}
+                  ? cost + ' ' + symbol
+                  : `Need more $${symbol}`}
               </Button>
             </div>
           )}

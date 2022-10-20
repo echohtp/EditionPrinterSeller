@@ -16,6 +16,7 @@ import { toast } from 'react-toastify'
 import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
 import styles from '../styles/Home.module.css'
 import { Edition } from '../components/edition'
+import mintsOnSale from '../data/onsale'
 
 const CUSTOM_TOKEN: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_SPLTOKEN!)
 const BANK: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK!)
@@ -28,26 +29,34 @@ const Home: NextPage = () => {
   const { connection } = useConnection()
   const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [canMint, setCanMint] = useState<boolean>(false)
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean[]>([])
   const [error, setError] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [timer, setTimer] = useState<any>()
 
-  const jokes =["Joke 1","Joke 2", "Joke 3", "Joke 4", "Joke 5", "Joke 6"]
+  const jokes = ['Joke 1', 'Joke 2', 'Joke 3', 'Joke 4', 'Joke 5', 'Joke 6']
 
-  const doIt = async () => {
-    if (!publicKey) return
-    setLoading(true)
+  const doIt = async (_cost: number, _custom_token:string, _bank:string, _bank_ata:string, _index: number) => {
+    if (!publicKey || !_cost ||!_custom_token || !_bank) return
+    let _loading = loading
+    _loading[_index] = true
+    setLoading(_loading)
     console.log('Lets do the work')
-    console.log('Cost: ', COST)
-    console.log('SplToken: ', CUSTOM_TOKEN.toBase58())
-    console.log('Reciever: ', BANK.toBase58())
+    console.log('Cost: ', _cost)
+    console.log('SplToken: ', _custom_token)
+    console.log('Reciever: ', _bank)
     console.log('Sender: ', publicKey?.toBase58())
 
     let tx = new Transaction()
-    if (CUSTOM_TOKEN.toBase58() != NATIVE_MINT.toBase58()) {
-      // find ATA
-      const destination = BANK_ATA
+    let destination 
+    if (_custom_token == NATIVE_MINT.toBase58()) {
+        destination = new PublicKey(_bank)
+    }else{
+        destination = new PublicKey(_bank_ata)
+    }
+
+
+    if (_custom_token != NATIVE_MINT.toBase58()) {
       const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
 
       console.log('Receiver ATA: ', destination.toBase58())
@@ -59,15 +68,17 @@ const Home: NextPage = () => {
         source,
         destination,
         publicKey!,
-        COST
+        _cost * LAMPORTS_PER_SOL
       )
       tx.add(ixSendMoney)
     } else {
-      tx.add(SystemProgram.transfer({
-        fromPubkey: publicKey,
-        toPubkey: BANK,
-        lamports: COST
-      }))
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: new PublicKey(_bank),
+          lamports: _cost * LAMPORTS_PER_SOL
+        })
+      )
     }
     // get recent blockhash
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
@@ -90,7 +101,9 @@ const Home: NextPage = () => {
         const newMint = await fetch('api/mint', {
           body: JSON.stringify({
             signature: signature,
-            address: publicKey.toBase58()
+            address: publicKey.toBase58(),
+            index: _index,
+            receiver: destination
           }),
           headers: {
             'Content-Type': 'application/json; charset=utf8'
@@ -101,22 +114,28 @@ const Home: NextPage = () => {
         console.log(repJson)
 
         toast('Minting successful!')
-        setLoading(false)
+        let _loading = loading
+        _loading[_index] = false
+        setLoading(_loading)
       } catch (e) {
         toast(
           'There was an error, please contact support with your payment transaction id'
         )
-        setLoading(false)
+
+        let _loading = loading
+        _loading[_index] = false
+        setLoading(_loading)
         setError(true)
         setErrorMessage(signature)
       }
     } catch (e) {
       toast('Payment cancelled')
       console.log(e)
-      setLoading(false)
+      let _loading = loading
+        _loading[_index] = false
+        setLoading(_loading)
     }
   }
-
 
   // some funny toasts while we wait
   // useMemo(()=>{
@@ -128,7 +147,6 @@ const Home: NextPage = () => {
   //     setTimer(clearInterval(timer))
   //   }
   // },[loading])
-
 
   // Make sure the connected wallet has enough funds to mint.
   useMemo(async () => {
@@ -153,8 +171,10 @@ const Home: NextPage = () => {
     }
 
     console.log(`token: ${tokenPublicKey.toBase58()} || balance: ${balance}`)
-    
-    balance >= Number(process.env.NEXT_PUBLIC_PRICE!) ? setCanMint(true) : setCanMint(false)
+
+    balance >= Number(process.env.NEXT_PUBLIC_PRICE!)
+      ? setCanMint(true)
+      : setCanMint(false)
   }, [wallet.publicKey, connected])
 
   return (
@@ -185,14 +205,27 @@ const Home: NextPage = () => {
               </h2>
             )}
           </div>
-          <Edition
-            connected={connected}
-            canMint={canMint}
-            cost={COST}
-            symbol={process.env.NEXT_PUBLIC_SYMBOL || ''}
-            doIt={doIt}
-            loading={loading}
-          />
+          <div className='grid grid-cols-2 gap-8'>
+            {mintsOnSale.map((saleItem, index) => (
+              <div>
+                <Edition
+                  key={index}
+                  index={index}
+                  connected={connected}
+                  canMint={canMint}
+                  cost={saleItem.price}
+                  symbol={saleItem.symbol}
+                  doIt={doIt}
+                  splToken={saleItem.splToken}
+                  tokenMint={saleItem.mint}
+                  image={saleItem.image}
+                  bank={saleItem.bank}
+                  bankAta={saleItem.bankAta}
+                  loading={loading[index]}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </main>
 

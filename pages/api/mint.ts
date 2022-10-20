@@ -6,6 +6,7 @@ import { Keypair } from '@solana/web3.js'
 import bs58 from 'bs58'
 import { CUSTOM_TOKEN } from '../../util/constants'
 import { NATIVE_MINT } from '@solana/spl-token'
+import mintsOnSale from '../../data/onsale'
 
 const nftAddress = process.env.NEXT_PUBLIC_NFT!
 const PRICE = process.env.NEXT_PUBLIC_PRICE
@@ -13,25 +14,37 @@ const MASTER_EDITION_ADDRESS = new PublicKey(
   nftAddress // nft to print here
 )
 
-const BANK_ATA: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK_ATA!)
 
 type Data = {
   acct?: string
   error?: string
 }
 
+
+
 export default async function handler (
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  if (req.method != 'POST') return
 
-  if (!req.body.signature || !req.body.address) return
-
-  const connection = new Connection('https://ssc-dao.genesysgo.net')
-  const slot = await connection.getSlot()
+  console.log("=======event======");
   console.log(req.body)
 
+  if (req.method != 'POST') {
+    console.log("Not a post request")
+    return  res.status(200).send({ error: 'Not a post request' })
+  }
+
+  const paramters = Object.keys(req.body)
+
+  if (!paramters.includes("signature") || !paramters.includes("address") || !paramters.includes("index") || !paramters.includes("receiver")) {
+    console.log("Missing paramters");
+    return res.status(200).send({ error: 'Missing parameters' })
+  }
+
+  const connection = new Connection(process.env.NEXT_PUBLIC_RPC!)
+  const slot = await connection.getSlot()
+  
   // // verify the tx
   console.log('verifying tx')
 
@@ -72,21 +85,20 @@ export default async function handler (
 
   console.log('t0: ', t0)
   console.log('t1: ', t1)
-  console.log('diff: ', Math.abs(t0! - t1!))
-  console.log(PRICE)
-  console.log(Math.abs(t0! - t1!) != Number(PRICE))
-  
-  // if (Math.abs(t0! - t1!).toPrecision(3) != PRICE)
-  //   return res.status(200).send({ error: 'bad till' })
+  console.log('diff: ', Math.abs(Number(Number(t1! - t0!).toPrecision(2))))
+  console.log(Math.abs(Number(mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL)))
 
-  // console.log('correct payment')
+  if (Math.abs(Number(Number(t1! - t0!).toPrecision(2))) != Math.abs(Number(mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL)))
+    return res.status(200).send({ error: 'bad till' })
+
+  console.log('correct payment')
   console.log('checking keys')
 
   const acctKeys = txResult?.transaction.message.getAccountKeys()
   const sender = acctKeys?.get(0)?.toBase58()
   const reciever = acctKeys?.get(1)
 
-  if (sender != req.body.address && reciever != BANK_ATA)
+  if (sender != req.body.address && (reciever?.toBase58() != mintsOnSale[req.body.index].bank || reciever?.toBase58() != mintsOnSale[req.body.index].bankAta))
     return res.status(200).send({ error: 'bad accts' })
 
   console.log('accounts are good')
@@ -102,7 +114,7 @@ export default async function handler (
 
   const nft = await metaplex
     .nfts()
-    .findByMint({ mintAddress: MASTER_EDITION_ADDRESS })
+    .findByMint({ mintAddress: new PublicKey(mintsOnSale[req.body.index].mint) })
     .run()
   console.log('we found the nft')
   console.log(nft.name)
@@ -113,7 +125,7 @@ export default async function handler (
   const newNft = await metaplex
     .nfts()
     .printNewEdition({
-      originalMint: MASTER_EDITION_ADDRESS,
+      originalMint: new PublicKey(mintsOnSale[req.body.index].mint),
       newOwner: newOwner
     })
     .run()
@@ -125,6 +137,6 @@ export default async function handler (
     // possible reasons: 
     // at NFT Supply limit
     // ...?
-    return res.status(200).send({ error: "Printing failed, you have been refunded!" })
+    return res.status(200).send({ error: "Printing failed, please contact support!" })
   }
 }
