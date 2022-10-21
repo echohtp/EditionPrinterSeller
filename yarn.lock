@@ -6301,6 +6301,14 @@ rc-virtual-list@^3.2.0, rc-virtual-list@^3.4.8:
     rc-resize-observer "^1.0.0"
     rc-util "^5.15.0"
 
+react-confetti-explosion@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/react-confetti-explosion/-/react-confetti-explosion-1.5.1.tgz#b2952835337776e673e01b69569748bf2d0086e1"
+  integrity sha512-bmALZZRwFFXNuW1N8203S5Zn8TAsNRrrlE01HxGVQuXvEOK1/200QAGROqLcOL+g2ZoH7NHagPH/OTKPt1os4A==
+  dependencies:
+    "@material-ui/styles" "^4.11.5"
+    lodash "^4.17.21"
+
 react-dom@16.13.1:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-dom/-/react-dom-16.13.1.tgz"

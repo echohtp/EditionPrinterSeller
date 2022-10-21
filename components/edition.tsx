@@ -26,16 +26,15 @@ export interface EditionProps {
   bankAta: string
   image: string
   index: number
-  loading: boolean
 }
 
 export const Edition = (props: EditionProps) => {
-  const { connected, cost, symbol, tokenMint, image, splToken, bank, bankAta, doIt, index, loading } = props
+  const { connected, cost, symbol, tokenMint, image, splToken, bank, bankAta, doIt, index } = props
   const wallet = useWallet()
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC!)
   const [canMint, setCanMint] = useState<boolean>(false)
   const [isOpen, setIsOpen] = useState<boolean>(false)
-  // const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(false)
 
   // const mintIt = async () => {
   //   if (!wallet.publicKey) return
@@ -138,40 +137,32 @@ export const Edition = (props: EditionProps) => {
     let balance: any
     if (tokenPublicKey.toBase58() == NATIVE_MINT.toBase58()) {
       balance = await connection.getBalance(ownerPublicKey)
-      console.log('bal: ', balance)
+      console.log('bal: ', balance/LAMPORTS_PER_SOL)
+      console.log(`token: ${tokenPublicKey.toBase58()} (${balance/LAMPORTS_PER_SOL})`)
+
+      balance >= Number(cost * LAMPORTS_PER_SOL)
+        ? setCanMint(true)
+        : setCanMint(false)
     } else {
       balance = await connection.getParsedTokenAccountsByOwner(ownerPublicKey, {
         mint: tokenPublicKey
       })
       balance = balance.value[0]?.account.data.parsed.info.tokenAmount.uiAmount
-    }
-
-    console.log(`token: ${tokenPublicKey.toBase58()} (${balance})`)
+      console.log(`token: ${tokenPublicKey.toBase58()} (${balance})`)
     
 
-    balance >= Number(cost)
-      ? setCanMint(true)
-      : setCanMint(false)
+      balance >= Number(cost)
+        ? setCanMint(true)
+        : setCanMint(false)
+    }
+
+   
   }, [wallet.publicKey, connected])
 
 
 
   return (
-    <div className='flex justify-center pt-5'>
-      <a className='inline-block max-w-xs overflow-hidden transition duration-300 ease-in-out shadow-xl cursor-pointer rounded-3xl hover:-translate-y-1 hover:scale-102 max-h-xs'>
-        <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
-        {isOpen && (
-          <Lightbox
-            mainSrc={image}
-            onCloseRequest={() => setIsOpen(false)}
-          />
-        )}
-          <img
-            src={image + '?width=400'}
-            className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
-            onClick={()=> setIsOpen(true)}
-          />
-        </div>
+    <div className='flex justify-center'>
         <div className='bg-white'>
           {!connected && (
             <div className='px-3 pt-2 pb-6 text-center'>
@@ -188,8 +179,10 @@ export const Edition = (props: EditionProps) => {
               <Button
                 loading={loading}
                 disabled={!canMint}
-                onClick={()=>{
-                  doIt(cost, splToken, bank, bankAta, index)
+                onClick={async ()=>{
+                  setLoading(true)
+                  await doIt(cost, splToken, bank, bankAta, index)
+                  setLoading(false)
                 }}
                 className='w-48 px-3 py-3 mt-4 font-light border border-dashed rounded-lg border-slate-700 hover:bg-slate-700 hover:text-white'
               >
@@ -200,7 +193,6 @@ export const Edition = (props: EditionProps) => {
             </div>
           )}
         </div>
-      </a>
     </div>
   )
 }

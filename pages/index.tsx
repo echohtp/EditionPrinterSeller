@@ -6,6 +6,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { NextPage } from 'next'
 import Head from 'next/head'
+// import ConfettiExplosion from 'react-confetti-explosion'
 import {
   createTransferInstruction,
   getAssociatedTokenAddress,
@@ -17,6 +18,7 @@ import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
 import styles from '../styles/Home.module.css'
 import { Edition } from '../components/edition'
 import mintsOnSale from '../data/onsale'
+import Lightbox from 'react-image-lightbox'
 
 const CUSTOM_TOKEN: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_SPLTOKEN!)
 const BANK: PublicKey = new PublicKey(process.env.NEXT_PUBLIC_BANK!)
@@ -29,32 +31,41 @@ const Home: NextPage = () => {
   const { connection } = useConnection()
   const [tokenBalance, setTokenBalance] = useState<number>(0)
   const [canMint, setCanMint] = useState<boolean>(false)
-  const [loading, setLoading] = useState<boolean[]>([])
+  const [loading, setLoading] = useState<boolean[]>(
+    new Array(mintsOnSale.length).fill(false)
+  )
   const [error, setError] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [timer, setTimer] = useState<any>()
+  // const [timer, setTimer] = useState<any>()
+  // const [isExploding, setIsExploding] = useState<boolean>(false)
+  const [isOpen, setIsOpen] = useState<boolean>(false)
 
   const jokes = ['Joke 1', 'Joke 2', 'Joke 3', 'Joke 4', 'Joke 5', 'Joke 6']
 
-  const doIt = async (_cost: number, _custom_token:string, _bank:string, _bank_ata:string, _index: number) => {
-    if (!publicKey || !_cost ||!_custom_token || !_bank) return
+  const doIt = async (
+    _cost: number,
+    _custom_token: string,
+    _bank: string,
+    _bank_ata: string,
+    _index: number
+  ) => {
+    if (!publicKey || !_cost || !_custom_token || !_bank) return
     let _loading = loading
     _loading[_index] = true
     setLoading(_loading)
+    console.log(loading)
     console.log('Lets do the work')
     console.log('Cost: ', _cost)
     console.log('SplToken: ', _custom_token)
     console.log('Reciever: ', _bank)
     console.log('Sender: ', publicKey?.toBase58())
-
     let tx = new Transaction()
-    let destination 
+    let destination
     if (_custom_token == NATIVE_MINT.toBase58()) {
-        destination = new PublicKey(_bank)
-    }else{
-        destination = new PublicKey(_bank_ata)
+      destination = new PublicKey(_bank)
+    } else {
+      destination = new PublicKey(_bank_ata)
     }
-
 
     if (_custom_token != NATIVE_MINT.toBase58()) {
       const source = await getAssociatedTokenAddress(CUSTOM_TOKEN, publicKey!)
@@ -132,8 +143,8 @@ const Home: NextPage = () => {
       toast('Payment cancelled')
       console.log(e)
       let _loading = loading
-        _loading[_index] = false
-        setLoading(_loading)
+      _loading[_index] = false
+      setLoading(_loading)
     }
   }
 
@@ -176,9 +187,13 @@ const Home: NextPage = () => {
       ? setCanMint(true)
       : setCanMint(false)
   }, [wallet.publicKey, connected])
-
+  const image = 'https://assets1.holaplex.tools/ipfs/bafybeiatemwoesf43eqzdieojhrdxl6pgbdhnpi2llkzmq3hn3n2tibh24'
+  const image_hr = '/technical_debt_hr.jpeg'
+  const NFT_NAME = 'Technical Debt'
+  const NFT_DESCRIPTION = 'Debt is endemic in all technical systems...'
   return (
     <div className='flex flex-col min-h-screen'>
+      {/* {isExploding && <ConfettiExplosion />} */}
       <Head>
         <title>Edition Printer</title>
         <meta name='description' content='Edition' />
@@ -187,44 +202,79 @@ const Home: NextPage = () => {
       <main className={styles.main}>
         <WalletMultiButton />
 
-        <h1 className='font-extrabold tracking-tighter text-center transition-transform ease-in-out bg-transparent sm:leading-4 text-7xl md:text-9xl text-gradient bg-clip-text animated hover:scale-105 hover:skew-y-6 hover:-skew-x-6'>
-          Edition Printer
+        <h1 className='text-4xl font-extrabold tracking-tighter text-center transition-transform ease-in-out bg-transparent sm:leading-4 md:text-9xl text-gradient bg-clip-text animated hover:scale-105 hover:skew-y-6 hover:-skew-x-6'>
+          Technical Debt
         </h1>
-        <div className='relative flex flex-col items-center justify-center w-full py-8 overflow-hidden sm:py-12 lg:pb-8'>
-          <div className='flex flex-col items-center pb-5'>
-            <h2 className='text-lg font-extrabold tracking-wider text-center uppercase sm:text-2xl font-plex'>
+        {error && (
+          <>
+            <div className='relative flex flex-col items-center justify-center w-full my-4 overflow-hidden sm:py-12 lg:pb-8'>
+              {/* <h2 className='text-lg font-extrabold tracking-wider text-center uppercase sm:text-2xl font-plex'>
               <span className='pb-1 sm:pb-2 whitespace-nowrap'>
                 open edition mints
               </span>
-            </h2>
-            {error && (
-              <h2 className='mx-4 my-4 text-lg font-extrabold tracking-wider text-center uppercase bg-yellow-200 border-yellow-300 border-dashed sm:text-2xl font-plex'>
+            </h2> */}
+
+              <h2 className='mx-4 my-4 tracking-wider text-center bg-yellow-200 border-yellow-300 border-dashed sm:text-2xl font-plex'>
                 <span className='pb-1 sm:pb-2 whitespace-nowrap'>
                   {errorMessage}
                 </span>
               </h2>
-            )}
-          </div>
-          <div className='grid grid-cols-2 gap-8'>
-            {mintsOnSale.map((saleItem, index) => (
-              <div key={index}>
-                <Edition
-                  index={index}
-                  connected={connected}
-                  canMint={canMint}
-                  cost={saleItem.price}
-                  symbol={saleItem.symbol}
-                  doIt={doIt}
-                  splToken={saleItem.splToken}
-                  tokenMint={saleItem.mint}
-                  image={saleItem.image}
-                  bank={saleItem.bank}
-                  bankAta={saleItem.bankAta}
-                  loading={loading[index]}
+            </div>
+          </>
+        )}
+        <div className='flex justify-center pt-5'>
+          <a className='inline-block overflow-hidden transition duration-300 ease-in-out shadow-xl cursor-pointer rounded-3xl max-h-xs'>
+            <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
+              {isOpen && (
+                <Lightbox
+                  mainSrc={image}
+                  onCloseRequest={() => setIsOpen(false)}
+                  imageTitle={NFT_NAME}
+                  imageCaption={NFT_DESCRIPTION}
                 />
-              </div>
-            ))}
-          </div>
+              )}
+              <img
+                src={image + '?width=500'}
+                className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
+                onClick={() => setIsOpen(true)}
+              />
+            </div>
+            <div className='bg-white'>
+              {!connected && (
+                <div className='px-3 pt-2 pb-6 text-center'>
+                  <p className='mt-2 font-sans font-light text-slate-700'>
+                    Please connect your wallet.
+                  </p>
+                </div>
+              )}
+              {connected && (
+                <div className='px-3 text-center'>
+                  <p className='mt-2 font-sans text-slate-700'>
+                    {NFT_DESCRIPTION}
+                  </p>
+                  <div className='grid grid-cols-2 gap-4'>
+                    {mintsOnSale.map((saleItem, index) => (
+                      <div key={index}>
+                        <Edition
+                          index={index}
+                          connected={connected}
+                          canMint={canMint}
+                          cost={saleItem.price}
+                          symbol={saleItem.symbol}
+                          doIt={doIt}
+                          splToken={saleItem.splToken}
+                          tokenMint={saleItem.mint}
+                          image={saleItem.image}
+                          bank={saleItem.bank}
+                          bankAta={saleItem.bankAta}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </a>
         </div>
       </main>
 
