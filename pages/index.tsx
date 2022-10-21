@@ -234,8 +234,8 @@ const Home: NextPage = () => {
                 />
               )}
               <img
-                src={image + '?width=500'}
-                className='object-cover w-full h-full duration-700 transform backdrop-opacity-100'
+                src={"technical_debt_lr.png"}
+                className='object-fill w-[500px] h-full duration-700 transform backdrop-opacity-100'
                 onClick={() => setIsOpen(true)}
               />
             </div>
