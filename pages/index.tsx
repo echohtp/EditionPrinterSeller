@@ -190,7 +190,7 @@ const Home: NextPage = () => {
   const image = 'https://assets1.holaplex.tools/ipfs/bafybeiatemwoesf43eqzdieojhrdxl6pgbdhnpi2llkzmq3hn3n2tibh24'
   const image_hr = '/technical_debt_hr.jpeg'
   const NFT_NAME = 'Technical Debt'
-  const NFT_DESCRIPTION = 'Debt is endemic in all technical systems...'
+  const NFT_DESCRIPTION = "There are many reasons why technical debt may accumulate in a system..."
   return (
     <div className='flex flex-col min-h-screen'>
       {/* {isExploding && <ConfettiExplosion />} */}
@@ -235,7 +235,7 @@ const Home: NextPage = () => {
               )}
               <img
                 src={"technical_debt_lr.png"}
-                className='object-fill w-[500px] h-full duration-700 transform backdrop-opacity-100'
+                className='object-cover w-[600px] h-full duration-700 transform backdrop-opacity-100'
                 onClick={() => setIsOpen(true)}
               />
             </div>
@@ -248,10 +248,16 @@ const Home: NextPage = () => {
                 </div>
               )}
               {connected && (
-                <div className='px-3 text-center'>
-                  <p className='mt-2 font-sans text-slate-700'>
-                    {NFT_DESCRIPTION}
-                  </p>
+                <div className='px-3'>
+                  <div className="px-3">
+                  <p className='mt-2 mb-2 font-sans text-slate-700'>There are many reasons why technical debt may accumulate in a system.<br/>Some common causes include:</p> 
+                  <ul className='mb-2 ml-8 font-sans text-slate-700' style={{listStyle: "square outside"}}>
+                    <li>Lack of foresight</li>
+                    <li>Lack of understanding</li>
+                    <li>Lack of resources</li>
+                  </ul>
+                    <p className='font-sans text-slate-700'>The result? A <b>beautiful unmanageable</b> monstrosity.</p>
+                    </div>
                   <div className='grid grid-cols-2 gap-4'>
                     {mintsOnSale.map((saleItem, index) => (
                       <div key={index}>
