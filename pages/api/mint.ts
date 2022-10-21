@@ -1,12 +1,16 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Metaplex, keypairIdentity, logTrace } from '@metaplex-foundation/js'
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from '@solana/web3.js'
 import { Keypair } from '@solana/web3.js'
 import bs58 from 'bs58'
 import { CUSTOM_TOKEN } from '../../util/constants'
-import { NATIVE_MINT } from '@solana/spl-token'
 import mintsOnSale from '../../data/onsale'
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  NATIVE_MINT
+} from '@solana/spl-token'
 
 const nftAddress = process.env.NEXT_PUBLIC_NFT!
 const PRICE = process.env.NEXT_PUBLIC_PRICE
@@ -137,6 +141,46 @@ export default async function handler (
     // possible reasons: 
     // at NFT Supply limit
     // ...?
-    return res.status(200).send({ error: "Printing failed, please contact support!" })
+    res.status(200).send({ error: "Printing failed, please contact support!" })
+    const tx = new Transaction()
+    const source = mintsOnSale[req.body.index].bankAta
+    const receiver = req.body.receiver
+    
+    // return funds to user
+    if ( mintsOnSale[req.body.index].mint != NATIVE_MINT.toBase58()) {
+      const ixSendMoney = createTransferInstruction(
+        new PublicKey(source),
+        new PublicKey(receiver),
+        keypair.publicKey,
+        mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL
+      )
+      tx.add(ixSendMoney)
+    } else {
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: keypair.publicKey,
+          toPubkey: new PublicKey(receiver),
+          lamports: mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL
+        })
+      )
+    }
+    // get recent blockhash
+    tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
+
+    // set whos paying for the tx
+    tx.feePayer = keypair.publicKey
+
+    try {
+      const signature = await connection.sendTransaction(tx, [keypair])
+      const latestBlockHash = await connection.getLatestBlockhash()
+      await connection.confirmTransaction({
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature
+      })
+    }catch{
+      console.log('couldnt refund user')
+      console.log(req.body);
+    }
   }
 }
