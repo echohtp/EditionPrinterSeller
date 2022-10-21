@@ -92,8 +92,8 @@ export default async function handler (
   console.log('diff: ', Math.abs(Number(Number(t1! - t0!).toPrecision(2))))
   console.log(Math.abs(Number(mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL)))
 
-  if (Math.abs(Number(Number(t1! - t0!).toPrecision(2))) != Math.abs(Number(mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL)))
-    return res.status(200).send({ error: 'bad till' })
+  // if (Math.abs(Number(Number(t1! - t0!).toPrecision(2))) != Math.abs(Number(mintsOnSale[req.body.index].price * LAMPORTS_PER_SOL)))
+  //   return res.status(200).send({ error: 'bad till' })
 
   console.log('correct payment')
   console.log('checking keys')
