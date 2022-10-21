@@ -229,7 +229,7 @@ const Home: NextPage = () => {
                 <Lightbox
                   mainSrc={image}
                   onCloseRequest={() => setIsOpen(false)}
-                  imageTitle={NFT_NAME}
+                  imageTitle={NFT_NAME + " -----> Press the (+) button if the image doesnt load"}
                   imageCaption={NFT_DESCRIPTION}
                 />
               )}
