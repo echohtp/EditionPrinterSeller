@@ -182,7 +182,7 @@ const Home: NextPage = () => {
         </>) : (
         <div className={`${grids}`}>
           {mintsOnSale.map((saleItem, index) => (
-            <div className='flex-grow px-4 basis-1/2' key={index}>
+            <div className='flex-grow px-4 basis-1/2' key={"mintsonsale-" + saleItem.mint}>
               <Edition
                 index={index}
                 connected={connected}
