@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+.confetti-container {
+  position: 'absolute';
+  overflow: 'hidden';
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+};
+
+.confetti-source {
+  position: 'absolute';
+  right: '50%';
+  left: '50%';
+  bottom: 50;
+};
+
 .wallet-adapter-button-trigger {
   background-color: rgb(229, 229, 229) !important;
   color:black !important;
