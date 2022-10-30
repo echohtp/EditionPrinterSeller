@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react'
-import { PublicKey, SendTransactionError, Transaction } from '@solana/web3.js'
+import { PublicKey, Transaction } from '@solana/web3.js'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { NextPage } from 'next'
@@ -11,7 +11,6 @@ import {
   getAssociatedTokenAddress,
   NATIVE_MINT
 } from '@solana/spl-token'
-import { useMemo } from 'react'
 import { toast } from 'react-toastify'
 import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
 import styles from '../styles/Home.module.css'

@@ -5,7 +5,7 @@ const Footer = () => {
         <footer className="flex" style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
         <div className='p-4 text-center'>
           Made with ❤️ by{' '}
-          <a href='https://twitter.com/0xbanana' target='_blank'>
+          <a href='https://twitter.com/0xbanana' target='_blank' rel="noreferrer">
             0xBanana
           </a>
         </div>

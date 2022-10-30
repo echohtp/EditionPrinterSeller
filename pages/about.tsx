@@ -27,7 +27,7 @@ const About: NextPage = () => {
             Code is my art. 
         </p>
         <p className='pt-5'>
-            If you'd like to get your token or art listed, <Link href="https://twitter.com/0xbanana" target="_blank"><u>send me a DM</u></Link>.
+            If you&apos;d like to get your token or art listed, <Link href="https://twitter.com/0xbanana" target="_blank"><u>send me a DM</u></Link>.
         </p>
         </div>
     </main>

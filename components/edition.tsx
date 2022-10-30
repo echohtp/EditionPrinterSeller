@@ -1,21 +1,11 @@
-import {
-  createTransferInstruction,
-  getAssociatedTokenAddress,
-  NATIVE_MINT
-} from '@solana/spl-token'
 import Link from 'next/link'
-import { toast } from 'react-toastify'
 import { useMemo } from 'react'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { PublicKey } from '@solana/web3.js'
 import { Connection } from '@solana/web3.js'
 import { useState } from 'react'
 import Lightbox from 'react-image-lightbox'
-import { Transaction } from '@solana/web3.js'
-import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
 import BuyNow from './BuyNow'
 import { Metaplex, Nft } from '@metaplex-foundation/js'
-import { SentimentSatisfiedTwoTone } from '@material-ui/icons'
 
 // feature flags
 const LinkToCreator = false
@@ -28,13 +18,9 @@ export interface priceTag {
 }
 export interface EditionProps {
   connected: boolean
-  canMint: boolean
-  doIt: void
-  image: string
+  doIt: any
   index: number
   priceTags: priceTag[][]
-  name: string
-  description: string
   creator: string
   mint: string
   open: boolean
@@ -46,9 +32,6 @@ export const Edition = (props: EditionProps) => {
     priceTags,
     doIt,
     index,
-    image,
-    name,
-    description,
     creator,
     mint,
     open
@@ -81,7 +64,7 @@ export const Edition = (props: EditionProps) => {
               imageTitle={
                 name + ' -----> Press the (+) button if the image doesnt load'
               }
-              imageCaption={description}
+              imageCaption={nft?.json?.description}
             />
           )}
           <img
@@ -127,11 +110,12 @@ export const Edition = (props: EditionProps) => {
                     </p>
                   </div>
                 )}
-                {connected && open && (
+                {connected && 
+                  (open ? (
                   <>
                     <div className='grid pb-6 text-center grid-cols'>
                       {priceTags.map((tag: priceTag[], idx: number) => (
-                        <div className='w-full py-1'>
+                        <div className='w-full py-1' key={index}>
                           <BuyNow
                             priceTag={tag}
                             index={idx}
@@ -142,15 +126,15 @@ export const Edition = (props: EditionProps) => {
                       ))}
                     </div>
                   </>
-                )}
-                {connected && !open && (
+                  )
+                : (
                   <>
                     <div className='px-3 pt-2 pb-6 mx-4 text-center'>
                       <h1>Count down timer goes here if applicable</h1>
                       <h1>if not, put a link to a secondary marketplace</h1>
                     </div>
                   </>
-                )}
+                ))}
               </div>
             </div>
           </div>
