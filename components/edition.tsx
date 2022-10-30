@@ -14,6 +14,8 @@ import Lightbox from 'react-image-lightbox'
 import { Transaction } from '@solana/web3.js'
 import { LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js'
 import BuyNow from './BuyNow'
+import { Metaplex, Nft } from '@metaplex-foundation/js'
+import { SentimentSatisfiedTwoTone } from '@material-ui/icons'
 
 // feature flags
 const LinkToCreator = false
@@ -34,6 +36,8 @@ export interface EditionProps {
   name: string
   description: string
   creator: string
+  mint: string
+  open: boolean
 }
 
 export const Edition = (props: EditionProps) => {
@@ -45,9 +49,26 @@ export const Edition = (props: EditionProps) => {
     image,
     name,
     description,
-    creator
+    creator,
+    mint,
+    open
   } = props
   const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [editionsMinted, setEditionsMinted] = useState<number>(0)
+  const [nft, setNft] = useState<Nft|null>(null)
+
+  useMemo(async () => {
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC!)
+    const metaplex = new Metaplex(connection)
+    const nft = await metaplex
+      .nfts()
+      .findByMint({ mintAddress: new PublicKey(mint) })
+      .run()
+    if (nft.model != 'nft') return
+    if (!nft.edition.isOriginal) return
+    setNft(nft)
+    setEditionsMinted(nft.edition.supply.toNumber())
+  }, [mint])
 
   return (
     <div className='flex justify-center pt-5'>
@@ -55,7 +76,7 @@ export const Edition = (props: EditionProps) => {
         <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
           {isOpen && (
             <Lightbox
-              mainSrc={image}
+              mainSrc={nft?.json?.image!}
               onCloseRequest={() => setIsOpen(false)}
               imageTitle={
                 name + ' -----> Press the (+) button if the image doesnt load'
@@ -64,7 +85,7 @@ export const Edition = (props: EditionProps) => {
             />
           )}
           <img
-            src={image}
+            src={nft?.json?.image}
             className='object-cover duration-700 transform backdrop-opacity-100'
             onClick={() => setIsOpen(true)}
           />
@@ -72,11 +93,12 @@ export const Edition = (props: EditionProps) => {
         <div className='bg-white'>
           <div className='px-3'>
             <div className='px-3'>
-              <p className='py-2 text-2xl'>
-                {name} <small className='text-sm'>{creator}</small>
+              <p className='py-2 lg:text-xl md:text-xl sm:text-md'>
+                {nft?.name} 
+                {/* <small className='pl-4 text-sm'>{creator}</small> */}
               </p>
-              <p className='pb-2'>
-                <i>{description}</i>
+              <p className='pb-2 truncate'>
+                <i>{nft?.json?.description}</i>
               </p>
 
               {LinkToCreator ? (
@@ -88,7 +110,7 @@ export const Edition = (props: EditionProps) => {
                           1}.png`}
                       />
                     </div>
-                    <p className='pl-2'>0xBanana</p>
+                    <p className='pl-2'>{creator}</p>
                   </div>
                 </Link>
               ) : (
@@ -97,31 +119,44 @@ export const Edition = (props: EditionProps) => {
             </div>
 
             <div className='flex justify-center'>
-              <div className='bg-white'>
+              <div className='w-full bg-white'>
                 {!connected && (
-                  <div className='px-3 pt-2 pb-6 text-center'>
+                  <div className='pt-2 pb-6 text-center'>
                     <p className='mt-2 font-sans font-light text-slate-700'>
                       Connect wallet to mint.
                     </p>
                   </div>
                 )}
-                {connected && (
-                  <div className='px-3 pt-2 pb-6 mx-4 text-center'>
-                    {priceTags.map((tag: priceTag[], idx: number) => (
-                      <div className=''>
-                        <BuyNow
-                          priceTag={tag}
-                          index={idx}
-                          editionIndex={index}
-                          doIt={doIt}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                {connected && open && (
+                  <>
+                    <div className='grid pb-6 text-center grid-cols'>
+                      {priceTags.map((tag: priceTag[], idx: number) => (
+                        <div className='w-full py-1'>
+                          <BuyNow
+                            priceTag={tag}
+                            index={idx}
+                            editionIndex={index}
+                            doIt={doIt}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {connected && !open && (
+                  <>
+                    <div className='px-3 pt-2 pb-6 mx-4 text-center'>
+                      <h1>Count down timer goes here if applicable</h1>
+                      <h1>if not, put a link to a secondary marketplace</h1>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
           </div>
+        </div>
+        <div className='pb-2 text-center text-gray-400 bg-white'>
+          <h1><i>{editionsMinted ? `${editionsMinted} editions minted`: `be the first to mint`}</i></h1>
         </div>
       </a>
     </div>

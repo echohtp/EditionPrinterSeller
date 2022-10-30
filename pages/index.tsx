@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react'
 import { PublicKey, SendTransactionError, Transaction } from '@solana/web3.js'
-import { Button } from 'antd'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { NextPage } from 'next'
@@ -20,20 +19,14 @@ import { Edition, priceTag } from '../components/edition'
 import mintsOnSale from '../data/onsale'
 import Footer from '../components/Footer'
 
+const CLOSED = false
+
 const Home: NextPage = () => {
   const { publicKey, connected, sendTransaction } = useWallet()
   const { connection } = useConnection()
   const [error, setError] = useState<boolean>(false)
   const [confetti, setConfetti] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
-
-  useMemo(() => {
-    if (confetti)
-      setTimeout(() => {
-        console.log("gotta turn off the confetti")
-        setConfetti(false)
-      }, 10000)
-  }, [confetti])
 
   const doIt = async (priceTags: priceTag[], _index: number) => {
     if (!publicKey) return
@@ -151,15 +144,15 @@ const Home: NextPage = () => {
 
   const grids =
     mintsOnSale.length > 2
-      ? 'lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2'
-      : 'lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1'
+      ? 'grid lg:gap-1 md:gap-1 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1'
+      : 'grid lg:gap-1 md:gap-1 lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 grid-cols-1 grid-gap-1'
 
   return (
     <div className='flex flex-col min-h-screen'>
       {confetti && <Confetti className='w-screen h-screen' />}
       <Head>
-        <title>Edition Printer</title>
-        <meta name='description' content='Edition' />
+        <title>Open Editions - Home</title>
+        <meta name='description' content='Open Editions from 0xBanana and friends' />
         <link rel='icon' href='/favicon.ico' />
       </Head>
       <main className={styles.main}>
@@ -185,22 +178,26 @@ const Home: NextPage = () => {
             </div>
           </>
         )}
-        <div className={`grid gap-4 ${grids}`}>
+        {mintsOnSale.length == 0  || CLOSED ? (<>
+        <img src="https://americansigncompany.com/wp-content/uploads/2020/07/Sorry-Were-Closed-We-Hope-to-Be-Back-Soon-Thank-You.jpg"/>
+        </>) : (
+        <div className={`${grids}`}>
           {mintsOnSale.map((saleItem, index) => (
             <div className='flex-grow px-4 basis-1/2' key={index}>
               <Edition
                 index={index}
                 connected={connected}
                 doIt={doIt}
-                image={saleItem.image}
                 priceTags={saleItem.priceTags}
-                name={saleItem.name}
-                description={saleItem.description}
                 creator={saleItem.creator}
+                mint={saleItem.mint}
+                open={saleItem.open}
               />
             </div>
           ))}
+          
         </div>
+        )}
       </main>
 
       <Footer/>
