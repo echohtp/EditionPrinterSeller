@@ -142,7 +142,7 @@ const Home: NextPage = () => {
   }
 
   const grids =
-    mintsOnSale.length > 2
+    mintsOnSale.length > 3
       ? 'grid lg:gap-1 md:gap-1 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1'
       : 'grid lg:gap-1 md:gap-1 lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 grid-cols-1 grid-gap-1'
 

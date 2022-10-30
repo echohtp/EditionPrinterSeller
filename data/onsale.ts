@@ -182,7 +182,7 @@ const mintsOnSale = [
   {
     creator: "0xBanana",
     open: true,
-    mint: '5JQHdReB7nj8Sto77rYtVKGuqiAKiWyJaPUDCv8mLKCE',
+    mint: 'A1BZNcjKSSJaiu3yRPzgdDfhutJbv9j335UvqceMgagB',
     priceTags: [
       [
         {

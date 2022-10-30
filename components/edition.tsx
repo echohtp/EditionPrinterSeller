@@ -6,6 +6,7 @@ import { useState } from 'react'
 import Lightbox from 'react-image-lightbox'
 import BuyNow from './BuyNow'
 import { Metaplex, Nft } from '@metaplex-foundation/js'
+import { imgopt } from '../data/util'
 
 // feature flags
 const LinkToCreator = false
@@ -59,7 +60,7 @@ export const Edition = (props: EditionProps) => {
         <div className='relative w-full overflow-hidden bg-black group rounded-t-3xl'>
           {isOpen && (
             <Lightbox
-              mainSrc={nft?.json?.image!}
+              mainSrc={imgopt(nft?.json?.image!, 1000)}
               onCloseRequest={() => setIsOpen(false)}
               imageTitle={
                 name + ' -----> Press the (+) button if the image doesnt load'
@@ -68,7 +69,7 @@ export const Edition = (props: EditionProps) => {
             />
           )}
           <img
-            src={nft?.json?.image}
+            src={imgopt(nft?.json?.image!, 600)}
             className='object-cover duration-700 transform backdrop-opacity-100'
             onClick={() => setIsOpen(true)}
           />
