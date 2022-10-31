@@ -18,7 +18,7 @@ import { Edition, priceTag } from '../components/edition'
 import mintsOnSale from '../data/onsale'
 import Footer from '../components/Footer'
 
-const CLOSED = false
+const CLOSED = true
 
 const Home: NextPage = () => {
   const { publicKey, connected, sendTransaction } = useWallet()
