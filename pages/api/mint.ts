@@ -77,7 +77,7 @@ export default async function handler (
   // check against slot
   console.log('checking slot')
 
-  if (slot - 50 > txResult.slot) res.status(200).send({ error: 'old tx' })
+  if (slot - 100 > txResult.slot) res.status(200).send({ error: 'old tx' })
   console.log('slot ok')
 
   // console.log('checking paid amount')

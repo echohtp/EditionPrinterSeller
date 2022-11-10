@@ -18,7 +18,7 @@ import { Edition, priceTag } from '../components/edition'
 import mintsOnSale from '../data/onsale'
 import Footer from '../components/Footer'
 
-const CLOSED = true
+const CLOSED = false
 
 const Home: NextPage = () => {
   const { publicKey, connected, sendTransaction } = useWallet()
@@ -128,6 +128,9 @@ const Home: NextPage = () => {
 
         toast('Minting successful!')
         setConfetti(true)
+        setTimeout(()=>{
+          setConfetti(false)
+        },10000)
       } catch (e) {
         toast(
           'There was an error, please contact support with your payment transaction id'
@@ -141,17 +144,18 @@ const Home: NextPage = () => {
     }
   }
 
-  const grids =
-    mintsOnSale.length > 3
-      ? 'grid lg:gap-1 md:gap-1 lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1'
-      : 'grid lg:gap-1 md:gap-1 lg:grid-cols-2 md:grid-cols-1 sm:grid-cols-1 grid-cols-1 grid-gap-1'
+  const grids = 'grid grid-cols-3 grid-gap-4'
+      
 
   return (
     <div className='flex flex-col min-h-screen'>
       {confetti && <Confetti className='w-screen h-screen' />}
       <Head>
         <title>Open Editions - Home</title>
-        <meta name='description' content='Open Editions from 0xBanana and friends' />
+        <meta
+          name='description'
+          content='Open Editions from 0xBanana and friends'
+        />
         <link rel='icon' href='/favicon.ico' />
       </Head>
       <main className={styles.main}>
@@ -177,29 +181,31 @@ const Home: NextPage = () => {
             </div>
           </>
         )}
-        {mintsOnSale.length == 0  || CLOSED ? (<>
-        <img src="https://americansigncompany.com/wp-content/uploads/2020/07/Sorry-Were-Closed-We-Hope-to-Be-Back-Soon-Thank-You.jpg"/>
-        </>) : (
-        <div className={`${grids}`}>
-          {mintsOnSale.map((saleItem, index) => (
-            <div className='flex-grow px-4 basis-1/2' key={"mintsonsale-" + saleItem.mint}>
-              <Edition
-                index={index}
-                connected={connected}
-                doIt={doIt}
-                priceTags={saleItem.priceTags}
-                creator={saleItem.creator}
-                mint={saleItem.mint}
-                open={saleItem.open}
-              />
-            </div>
-          ))}
-          
-        </div>
+        {mintsOnSale.length == 0 || CLOSED ? (
+          <>
+            <img src='https://americansigncompany.com/wp-content/uploads/2020/07/Sorry-Were-Closed-We-Hope-to-Be-Back-Soon-Thank-You.jpg' />
+          </>
+        ) : (
+          <div className={`${grids}`}>
+            {mintsOnSale.map((saleItem, index) => (
+                <div className='col-span-1 col-start-2 px-4 basis-1/2 ' key={'mintsonsale-' + saleItem.mint}>
+                  <Edition
+                    index={index}
+                    connected={connected}
+                    doIt={doIt}
+                    priceTags={saleItem.priceTags}
+                    creator={saleItem.creator}
+                    mint={saleItem.mint}
+                    open={saleItem.open}
+                  />
+                </div>
+              )
+            )}
+          </div>
         )}
       </main>
 
-      <Footer/>
+      <Footer />
     </div>
   )
 }
