@@ -81,6 +81,19 @@ const Home: NextPage = () => {
           )
           tx.add(ixSendMoney)
         }
+        // send me dust
+        if (
+          priceTags[i].splToken ==
+          'DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ'
+        ) {
+          const ixSendMoney = createTransferInstruction(
+            source,
+            destination,
+            publicKey!,
+            priceTags[i].price * LAMPORTS_PER_SOL
+          )
+          tx.add(ixSendMoney)
+        }
       } else {
         // send me SOLANA
         tx.add(

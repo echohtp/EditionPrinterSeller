@@ -40,6 +40,22 @@ const mintsOnSale = [
         },
       ],
       [
+        {
+          splToken: "DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ",
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: 'FjtvJt7vGjSfpVhx8SfFgfqJjK89MJAB1sQg5XfBGTpi',
+          price: 50,
+          symbol: '$DUST'
+        },
+        {
+          splToken: NATIVE_MINT.toBase58(),
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: '',
+          price: 0.69,
+          symbol: 'SOL'
+        },
+      ],
+      [
         
         {
           splToken: NATIVE_MINT.toBase58(),
@@ -79,6 +95,22 @@ const mintsOnSale = [
           bankAta: '7eCk9QGWqe1aPaeh3czADgKoce9ww8mEo32D3DBCqpos',
           price: 50,
           symbol: '$OOO'
+        },
+        {
+          splToken: NATIVE_MINT.toBase58(),
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: '',
+          price: 0.69,
+          symbol: 'SOL'
+        },
+      ],
+      [
+        {
+          splToken: "DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ",
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: 'FjtvJt7vGjSfpVhx8SfFgfqJjK89MJAB1sQg5XfBGTpi',
+          price: 50,
+          symbol: '$DUST'
         },
         {
           splToken: NATIVE_MINT.toBase58(),
@@ -138,6 +170,22 @@ const mintsOnSale = [
         },
       ],
       [
+        {
+          splToken: "DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ",
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: 'FjtvJt7vGjSfpVhx8SfFgfqJjK89MJAB1sQg5XfBGTpi',
+          price: 50,
+          symbol: '$DUST'
+        },
+        {
+          splToken: NATIVE_MINT.toBase58(),
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: '',
+          price: 0.69,
+          symbol: 'SOL'
+        },
+      ],
+      [
         
         {
           splToken: NATIVE_MINT.toBase58(),
@@ -177,6 +225,22 @@ const mintsOnSale = [
           bankAta: '7eCk9QGWqe1aPaeh3czADgKoce9ww8mEo32D3DBCqpos',
           price: 50,
           symbol: '$OOO'
+        },
+        {
+          splToken: NATIVE_MINT.toBase58(),
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: '',
+          price: 0.69,
+          symbol: 'SOL'
+        },
+      ],
+      [
+        {
+          splToken: "DUSTawucrTsGU8hcqRdHDCbuYhCPADMLM2VcCb8VnFnQ",
+          bank: '232PpcrPc6Kz7geafvbRzt5HnHP4kX88yvzUCN69WXQC',
+          bankAta: 'FjtvJt7vGjSfpVhx8SfFgfqJjK89MJAB1sQg5XfBGTpi',
+          price: 50,
+          symbol: '$DUST'
         },
         {
           splToken: NATIVE_MINT.toBase58(),
