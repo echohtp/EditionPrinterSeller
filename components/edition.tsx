@@ -41,7 +41,7 @@ export const Edition = (props: EditionProps) => {
   const [editionsMinted, setEditionsMinted] = useState<number>(0)
   const [nft, setNft] = useState<Nft|null>(null)
 
-  useMemo(async () => {
+  const updateEdition = useMemo(async () => {
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC!)
     const metaplex = new Metaplex(connection)
     const nft = await metaplex
@@ -77,13 +77,13 @@ export const Edition = (props: EditionProps) => {
         <div className='bg-white'>
           <div className='px-3'>
             <div className='px-3'>
-              <p className='py-2 lg:text-xl md:text-xl sm:text-md'>
+              <p className='py-2 text-center truncate lg:text-xl md:text-xl sm:text-md'>
                 {nft?.name} 
                 {/* <small className='pl-4 text-sm'>{creator}</small> */}
               </p>
-              <p className='pb-2 truncate'>
+              {/* <p className='pb-2 truncate'>
                 <i>{nft?.json?.description}</i>
-              </p>
+              </p> */}
 
               {LinkToCreator ? (
                 <Link href={`/${creator}`}>

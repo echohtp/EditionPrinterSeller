@@ -144,7 +144,7 @@ const Home: NextPage = () => {
     }
   }
 
-  const grids = 'grid grid-cols-3 grid-gap-4'
+  const grids = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'
       
 
   return (
@@ -188,7 +188,7 @@ const Home: NextPage = () => {
         ) : (
           <div className={`${grids}`}>
             {mintsOnSale.map((saleItem, index) => (
-                <div className='col-span-1 col-start-2 px-4 basis-1/2 ' key={'mintsonsale-' + saleItem.mint}>
+                <div className='' key={'mintsonsale-' + saleItem.mint}>
                   <Edition
                     index={index}
                     connected={connected}
