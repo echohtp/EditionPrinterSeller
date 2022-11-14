@@ -13,7 +13,9 @@ import {
   SolflareWalletAdapter,
   SolletExtensionWalletAdapter,
   SolletWalletAdapter,
-  TorusWalletAdapter
+  TorusWalletAdapter,
+  GlowWalletAdapter,
+  BackpackWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import { clusterApiUrl } from '@solana/web3.js'
@@ -54,7 +56,9 @@ function MyApp ({ Component, pageProps }: AppProps) {
   // of wallets that your users connect to will be loaded.
   const wallets = useMemo(
     () => [
+      new BackpackWalletAdapter(),
       new PhantomWalletAdapter(),
+      new GlowWalletAdapter(),
       new SlopeWalletAdapter(),
       new SolflareWalletAdapter({ network }),
       new TorusWalletAdapter(),
