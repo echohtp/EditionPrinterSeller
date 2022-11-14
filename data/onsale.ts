@@ -5,7 +5,7 @@ const mintsOnSale = [
   {
     creator: "0xBanana",
     open: true,
-    mint: '3NfpssCieUrUtB7FPJMUqgoiWfKih3GDfCimBfP9FBct',
+    mint: 'CVEUC9FPMpWCxDJpUg1QAKdBn8ijsGUC4DVM91fhCxXu',
     priceTags: [
       [
         {
